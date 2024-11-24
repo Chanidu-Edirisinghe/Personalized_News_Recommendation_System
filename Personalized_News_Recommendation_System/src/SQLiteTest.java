@@ -30,7 +30,7 @@ public class SQLiteTest {
         + "password TEXT NOT NULL, "
         + "firstname TEXT NOT NULL, "
         + "lastname TEXT NOT NULL, "
-        + "registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+        + "registration_date DATE DEFAULT (DATE('now')), "
         + "role TEXT DEFAULT 'User' CHECK(role IN ('USER', 'ADMIN'))"
         + ");";
 
@@ -151,7 +151,7 @@ public class SQLiteTest {
 //        + "password TEXT NOT NULL, "
 //        + "firstname TEXT NOT NULL, "
 //        + "lastname TEXT NOT NULL, "
-//        + "registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+//        + "registration_date DATE DEFAULT (DATE('now')), "
 //        + "role TEXT DEFAULT 'User' CHECK(role IN ('USER', 'ADMIN'))"
 //        + ");";
 

@@ -41,18 +41,18 @@ public class DatabaseHandler {
         }
     }
 
-    public boolean saveNewUser(SystemUser user) {
+    public boolean saveNewUser(User user) {
         String sql = "INSERT INTO Users (user_id, password, username, firstname, lastname, registration_date, role) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, user.getUserID());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getUsername());
-            pstmt.setString(4, user.getFirstName());
-            pstmt.setString(5, user.getLastName());
-            pstmt.setDate(6, java.sql.Date.valueOf(user.getRegistrationDate()));
-            pstmt.setString(7, user.getRole().toString());
-            pstmt.executeUpdate();
+        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setInt(1, user.getUserID());
+            pst.setString(2, user.getPassword());
+            pst.setString(3, user.getUsername());
+            pst.setString(4, user.getFirstName());
+            pst.setString(5, user.getLastName());
+            pst.setDate(6, java.sql.Date.valueOf(user.getRegistrationDate()));
+            pst.setString(7, user.getRole().toString());
+            pst.executeUpdate();
             System.out.println("User added successfully!");
             return true;
         } catch (SQLException e) {
@@ -79,6 +79,49 @@ public class DatabaseHandler {
         return false;
     }
 
+    public boolean checkUsernameAvailability(String username) {
+        String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND role = 'USER'";
+        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, username);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                // If the count is greater than 0, the username is already taken
+                return rs.getInt(1) == 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        // Return false in case of an error (indicates username is unavailable)
+        return false;
+    }
+
+    public void removeDeletedUser(User user) {
+        // SQL query to delete the user based on their unique identifier (e.g., user_id or username)
+        String deleteSQL = "DELETE FROM Users WHERE user_id = ?";
+
+        try (PreparedStatement pst = conn.prepareStatement(deleteSQL)) {
+
+            // Set the user_id parameter
+            pst.setInt(1, user.getUserID());
+
+            // Execute the deletion
+            int rowsAffected = pst.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("User successfully deleted.");
+            } else {
+                System.out.println("No user found with the given ID.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Error occurred while deleting the user: " + e.getMessage());
+        }
+    }
+
+
+
 //    public boolean savePreferences(String userID, Map<Category, Integer> categories){
 //        String sql = "INSERT INTO Preferences (userID, category, interest_level) VALUES (?, ?, ?)";
 //        try (PreparedStatement pst = conn.prepareStatement(sql)){
@@ -88,5 +131,6 @@ public class DatabaseHandler {
 //            e.printStackTrace();
 //        }
 //    }
+
 
 }

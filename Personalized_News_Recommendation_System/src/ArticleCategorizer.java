@@ -57,7 +57,7 @@ public class ArticleCategorizer {
     };
 
 
-    public void categorize(String article) {
+    public void categorizeArticles(String article) {
         try {
             // Path to Python script
             String pythonScript = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\CW\\Personalized_News_Recommendation_System\\python_scripts\\keyword_extractor.py"; // Update with actual path
@@ -120,9 +120,4 @@ public class ArticleCategorizer {
         return count;
     }
 
-    public static void main(String[] args) {
-        ArticleCategorizer categorizer = new ArticleCategorizer();
-        String sample = "tug";
-        categorizer.categorize(sample);
-    }
 }

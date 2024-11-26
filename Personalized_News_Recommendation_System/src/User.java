@@ -1,31 +1,87 @@
+import java.util.ArrayList;
+import java.util.List;
 
 public class User extends SystemUser{
-    public User(int userID, String username, String password, String firstname, String lastname) {
-        super(userID, username, password, firstname, lastname, Role.USER);
+    private List<Preference> preferences = new ArrayList<>();
+    private List<Interaction> interactions = new ArrayList<>();
+
+    public User(int user_id, String username, String password, String firstname, String lastname) {
+        super(user_id, username, password, firstname, lastname, Role.USER);
+    }
+
+    public User(String username, String password, String firstname, String lastname) {
+        super(username, password, firstname, lastname, Role.USER);
+    }
+
+    public User(){
+
+    }
+
+
+    public void addPreference(Preference preference){
+        preferences.add(preference);
     }
 
     public boolean register() {
         DatabaseHandler dbHandler = new DatabaseHandler();
         dbHandler.connect();
 
-        // Check if the username is available
-        if (!dbHandler.checkUsernameAvailability(this.getUsername())) {
-            System.out.println("Username is already taken. Please choose a different one.");
-            dbHandler.closeConnection();
-            return false;
-        }
-
         // Add the user to the database
         boolean isAdded = dbHandler.saveNewUser(this);
+        // get id from db and set to object
+        this.setUserID(Integer.parseInt(dbHandler.getUserDetails(this.getUsername()).getFirst()));
         dbHandler.closeConnection();
 
-        if (isAdded) {
-            System.out.println("Registration successful.");
-            return true;
-        } else {
-            System.out.println("Registration failed. Please try again.");
-            return false;
-        }
+        return isAdded;
+
     }
 
+    public void manageProfile(){
+        System.out.println("--------User Profile--------");
+        System.out.println("Username: "+this.getUsername());
+        System.out.println("Password: "+this.getRegistrationDate());
+
+    }
+
+    public void viewArticles(){
+        DatabaseHandler dbHandler = new DatabaseHandler();
+        dbHandler.connect();
+        List<List<String>> articles = dbHandler.fetchArticles();
+        System.out.println("Article ID   Article Title");
+        for (List<String> article : articles) {
+            System.out.print(article.getFirst());
+            System.out.print(" | ");
+            System.out.print(article.getLast());
+            System.out.println();
+        }
+        dbHandler.closeConnection();
+    }
+
+    public void updatePreferences(){
+
+    }
+
+    public void recordInteraction(){
+
+    }
+
+    public void getRecommendations(){
+
+    }
+
+    public void viewPreferences(){
+
+    }
+
+    public void viewFilteredArticles(){
+
+    }
+
+    public void viewDetails(){
+
+    }
+
+    public void updateDetails(){
+
+    }
 }

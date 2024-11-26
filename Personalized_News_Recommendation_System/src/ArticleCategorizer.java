@@ -120,4 +120,8 @@ public class ArticleCategorizer {
         return count;
     }
 
+    public void extractKeywords(){
+        
+    }
+
 }

@@ -1,14 +1,13 @@
+import java.util.ArrayList;
+import java.util.List;
 public class Article {
     private String articleID;
     private String title;
     private String content;
     private Category category;
+    private List<Keyword> keywords = new ArrayList<>();
 
     public void displayArticle(){
-
-    }
-
-    public void displayArticleList(){
 
     }
 

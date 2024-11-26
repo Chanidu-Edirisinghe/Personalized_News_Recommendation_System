@@ -1,4 +1,6 @@
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class DatabaseHandler {
@@ -16,6 +18,16 @@ public class DatabaseHandler {
         }
     }
 
+    public void closeConnection(){
+        try {
+            this.conn.close();
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     public boolean authenticate(String username, String password){
         String sql = "SELECT * FROM Users WHERE username = ? AND password = ?";
         try (PreparedStatement pst = conn.prepareStatement(sql)) {
@@ -31,21 +43,11 @@ public class DatabaseHandler {
         return false; // Return false if no match is found or an error occurs
     }
 
-    public void closeConnection(){
-        try {
-            this.conn.close();
-            System.out.println("Database connection closed.");
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     public boolean saveNewUser(User user) {
         String sql = "INSERT INTO Users (user_id, password, username, firstname, lastname, registration_date, role) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setInt(1, user.getUserID());
             pst.setString(2, user.getPassword());
             pst.setString(3, user.getUsername());
             pst.setString(4, user.getFirstName());
@@ -60,6 +62,36 @@ public class DatabaseHandler {
         }
         return false;
     }
+
+
+    public boolean savePreferences(String userID, List<Preference> preferences){
+        String sql = "INSERT INTO Preferences (userID, category, interest_level) VALUES (?, ?, ?)";
+        try (PreparedStatement pst = conn.prepareStatement(sql)){
+            for(int i = 0; i < preferences.size(); i++) {
+                pst.setString(1, userID);
+                pst.setString(2, String.valueOf(preferences.get(i).getCategory()));
+                pst.setInt(3, preferences.get(i).getInterestLevel());
+                pst.executeUpdate();
+            }
+            return true;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+//    public boolean saveInteraction(Interaction interaction){
+////        String createInteractionsTableSQL = "CREATE TABLE Interactions ("
+////                + "interaction_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+////                + "user_id INTEGER NOT NULL, "
+////                + "article_id INTEGER NOT NULL, "
+////                + "interaction_type TEXT CHECK(interaction_type IN ('Read', 'Like', 'Skip')) NOT NULL, "
+////                + "interaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+////                + "FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE, "
+////                + "FOREIGN KEY (article_id) REFERENCES Articles(article_id) ON DELETE CASCADE"
+////                + ");";
+//    }
 
     public boolean saveNewArticle(Article article) {
         String sql = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
@@ -79,6 +111,14 @@ public class DatabaseHandler {
         return false;
     }
 
+//    public boolean saveUpdatedArticle(){
+//
+//    }
+//
+//    public boolean removeDeletedArticle(){
+//
+//    }
+
     public boolean checkUsernameAvailability(String username) {
         String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND role = 'USER'";
         try (PreparedStatement pst = conn.prepareStatement(sql)) {
@@ -96,7 +136,7 @@ public class DatabaseHandler {
         return false;
     }
 
-    public void removeDeletedUser(User user) {
+    public void removeUser(User user) {
         // SQL query to delete the user based on their unique identifier (e.g., user_id or username)
         String deleteSQL = "DELETE FROM Users WHERE user_id = ?";
 
@@ -120,17 +160,69 @@ public class DatabaseHandler {
         }
     }
 
+    public List<String> getUserDetails(String username) {
+        List<String> userDetailsList = new ArrayList<>();
+        String sql = "SELECT user_id, username, password, firstname, lastname, registration_date, role FROM Users WHERE username LIKE ?";
+
+        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+
+            pst.setString(1, username); // Support partial matches
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                userDetailsList.add(rs.getString("user_id"));
+                userDetailsList.add(rs.getString("username"));
+                userDetailsList.add(rs.getString("password"));
+                userDetailsList.add(rs.getString("firstname"));
+                userDetailsList.add(rs.getString("lastname"));
+                userDetailsList.add(rs.getString("registration_date"));
+                userDetailsList.add(rs.getString("role"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return userDetailsList; // Return the list of user details
+    }
+
+    public List<List<String>> fetchArticles() {
+        List<List<String>> articleList = new ArrayList<>();
+        String sql = "SELECT article_id, title FROM Articles";
+
+        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+
+            ResultSet rs = pst.executeQuery();
+
+            while (rs.next()) {
+                List<String> articleDetails = new ArrayList<>();
+                articleDetails.add(rs.getString("article_id"));
+                articleDetails.add(rs.getString("title"));
+                // Add the single user's details to the main list
+                articleList.add(articleDetails);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return articleList; // Return the list of user details
+    }
+
+    public void getUserDetails(){
+
+    }
+
+    public void updateUserDetails(){
+
+    }
+
+    public void fetchFilteredArticles(){
+
+    }
+
+    public void updatePreferences(){
+
+    }
 
 
-//    public boolean savePreferences(String userID, Map<Category, Integer> categories){
-//        String sql = "INSERT INTO Preferences (userID, category, interest_level) VALUES (?, ?, ?)";
-//        try (PreparedStatement pst = conn.prepareStatement(sql)){
-//
-//        }
-//        catch (SQLException e){
-//            e.printStackTrace();
-//        }
-//    }
+
 
 
 }

@@ -101,17 +101,17 @@ public class SQLiteTest {
         if (conn != null) {
             String insertSQL = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
 
-            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            try (PreparedStatement pst = conn.prepareStatement(insertSQL)) {
                 for (String article : articles) {
                     // Split the article details
                     String[] parts = article.split(",", 3);
-                    pstmt.setString(1, parts[0].substring(1, parts[0].length() - 1)); // Title
-                    pstmt.setString(2, parts[1].substring(1, parts[1].length() - 1)); // Content
-                    pstmt.setString(3, parts[2].substring(1, parts[2].length() - 1)); // Category
+                    pst.setString(1, parts[0].substring(1, parts[0].length() - 1)); // Title
+                    pst.setString(2, parts[1].substring(1, parts[1].length() - 1)); // Content
+                    pst.setString(3, parts[2].substring(1, parts[2].length() - 1)); // Category
 
-                    pstmt.addBatch(); // Add to batch
+                    pst.addBatch(); // Add to batch
                 }
-                pstmt.executeBatch(); // Execute all insert statements in the batch
+                pst.executeBatch(); // Execute all insert statements in the batch
                 System.out.println("Articles inserted successfully.");
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -130,7 +130,7 @@ public class SQLiteTest {
 
         if (conn != null) {
             // Create tables if the connection is successful
-            makeTables(conn);
+            //makeTables(conn);
             //addTableData(conn);
 
             // Close the connection
@@ -185,7 +185,7 @@ public class SQLiteTest {
 //        preference_id INTEGER PRIMARY KEY AUTOINCREMENT,
 //        user_id INTEGER NOT NULL,
 //        category TEXT NOT NULL,
-//        interest_level INTEGER DEFAULT 5 CHECK(interest_level BETWEEN 0 AND 10),
+//        interest_level INTEGER DEFAULT 5 CHECK(interest_level BETWEEN 0 AND 100),
 //FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 //);
 

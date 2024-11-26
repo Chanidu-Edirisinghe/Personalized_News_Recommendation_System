@@ -2,6 +2,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
 
 public class SystemUser {
     private int userID;
@@ -23,17 +25,35 @@ public class SystemUser {
         this.registrationDate = LocalDate.now();
     }
 
+    public SystemUser(String username, String password, String firstname,
+                      String lastname, Role role){
+        this.username = username;
+        this.password = password;
+        this.firstName = firstname;
+        this.lastName = lastname;
+        this.role = role;
+        this.registrationDate = LocalDate.now();
+    }
+
     public SystemUser() {
 
     }
 
-    public boolean login(String username, String password){
+    public static List<String> login(String username, String password) {
         DatabaseHandler dbHandler = new DatabaseHandler();
         dbHandler.connect();
-        boolean result = dbHandler.authenticate(username, password);
-        dbHandler.closeConnection();
-        return result;
+        boolean isValid = dbHandler.authenticate(username, password);
+        if (isValid) {
+            List<String> details = dbHandler.getUserDetails(username);
+            dbHandler.closeConnection();
+            return details;
+        } else {
+            // Login failed, return null
+            dbHandler.closeConnection();
+            return null;
+        }
     }
+
 
     public void displayUserAccountDetails(){
         System.out.println("______________________________________________________");
@@ -71,5 +91,9 @@ public class SystemUser {
 
     public String getUsername() {
         return username;
+    }
+
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
 }

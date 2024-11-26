@@ -5,12 +5,10 @@ public class User extends SystemUser{
     private List<Preference> preferences = new ArrayList<>();
     private List<Interaction> interactions = new ArrayList<>();
 
+    private DatabaseHandler dbh = new DatabaseHandler();
+
     public User(int user_id, String username, String password, String firstname, String lastname) {
         super(user_id, username, password, firstname, lastname, Role.USER);
-    }
-
-    public User(String username, String password, String firstname, String lastname) {
-        super(username, password, firstname, lastname, Role.USER);
     }
 
     public User(){
@@ -20,19 +18,18 @@ public class User extends SystemUser{
 
     public void addPreference(Preference preference){
         preferences.add(preference);
+        dbh.connect();
+        dbh.savePreference(this.getUserID(), preference);
+        dbh.closeConnection();
     }
 
-    public boolean register() {
+    public static int register(String username, String password, String firstname, String lastname) {
         DatabaseHandler dbHandler = new DatabaseHandler();
         dbHandler.connect();
-
-        // Add the user to the database
-        boolean isAdded = dbHandler.saveNewUser(this);
-        // get id from db and set to object
-        this.setUserID(Integer.parseInt(dbHandler.getUserDetails(this.getUsername()).getFirst()));
+        int user_id = dbHandler.saveNewUser(username, password, firstname, lastname);
         dbHandler.closeConnection();
 
-        return isAdded;
+        return user_id;
 
     }
 
@@ -57,31 +54,47 @@ public class User extends SystemUser{
         dbHandler.closeConnection();
     }
 
-    public void updatePreferences(){
-
+    public void updatePreferences(int prefNumber, Category category, int interest_level){
+        Preference pref = preferences.get(prefNumber);
+        pref.setInterestLevel(interest_level);
+        dbh.connect();
+        dbh.updatePreference(this.getUserID(), pref);
+        dbh.closeConnection();
     }
 
-    public void recordInteraction(){
-
+    public void recordInteraction(Interaction interaction){
+        dbh.connect();
+        interactions.add(interaction);
+        dbh.saveInteraction(interaction);
+        dbh.closeConnection();
     }
 
-    public void getRecommendations(){
-
+    public List<Article> getRecommendations(){
+        RecommendationEngine re = new RecommendationEngine();
+        return re.generateRecommendations();
     }
 
     public void viewPreferences(){
-
+        System.out.println(preferences);
     }
 
-    public void viewFilteredArticles(){
-
+    public void viewFilteredArticles(Category category){
+        dbh.connect();
+        System.out.println(dbh.fetchFilteredArticles(category));
+        dbh.closeConnection();
     }
 
-    public void viewDetails(){
+//    public void viewDetails(){
+//        super.displayUserAccountDetails();
+//    }
 
-    }
-
-    public void updateDetails(){
-
+    public void updateDetails(String username, String password, String firstName, String lastName){
+        this.setUsername(username);
+        this.setPassword(password);
+        this.setFirstName(firstName);
+        this.setLastName(lastName);
+        dbh.connect();
+        dbh.updateUserDetails(this);
+        dbh.closeConnection();
     }
 }

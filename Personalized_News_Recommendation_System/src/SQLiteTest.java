@@ -1,8 +1,17 @@
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
+import java.util.Scanner;
 
 public class SQLiteTest {
 
@@ -67,14 +76,18 @@ public class SQLiteTest {
                 + "FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE"
                 + ");";
 
+        String recycledIDsSQL = "CREATE TABLE RecycledUserIDs ("
+                +"user_id INTEGER PRIMARY KEY);";
+
 
         try (Statement stmt = conn.createStatement()) {
             // Execute the SQL statement to create the table
-            stmt.executeUpdate(createUsersTableSQL);
-            stmt.executeUpdate(createArticlesTableSQL);
-            stmt.executeUpdate(createKeywordsTableSQL);
-            stmt.executeUpdate(createInteractionsTableSQL);
-            stmt.executeUpdate(createPreferencesTableSQL);
+//            stmt.executeUpdate(createUsersTableSQL);
+//            stmt.executeUpdate(createArticlesTableSQL);
+//            stmt.executeUpdate(createKeywordsTableSQL);
+//            stmt.executeUpdate(createInteractionsTableSQL);
+//            stmt.executeUpdate(createPreferencesTableSQL);
+            stmt.executeUpdate(recycledIDsSQL);
             System.out.println("Tables have been created successfully.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -131,8 +144,8 @@ public class SQLiteTest {
         if (conn != null) {
             // Create tables if the connection is successful
             //makeTables(conn);
-            //addTableData(conn);
-
+            addArticle("culture", conn);
+            
             // Close the connection
             try {
                 conn.close();
@@ -140,6 +153,66 @@ public class SQLiteTest {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void addArticle(String category, Connection conn){
+        String insertSQL = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
+        String jsonFilePath = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\WebScraper\\ArticleClassification\\culture.json";
+        try (PreparedStatement pst = conn.prepareStatement(insertSQL)) {
+            // Read and parse the JSON file
+            String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+            JSONArray jsonArray = new JSONArray(content);
+
+            // Iterate through the JSON array and insert articles
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                String title = jsonObject.getString("title");
+                String articleContent = jsonObject.getString("content");
+
+                // Set parameters for the SQL query
+                pst.setString(1, title);
+                pst.setString(2, articleContent);
+                pst.setString(3, category);
+
+                // Add the statement to the batch
+                pst.addBatch();
+            }
+
+            // Execute the batch
+            pst.executeBatch();
+
+            System.out.println("Articles inserted successfully.");
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException("Error inserting articles: ", e);
+        }
+    }
+
+
+    public static void readArticles() {
+        // Path to the JSON file
+        String jsonFilePath = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\WebScraper\\ArticleClassification\\culture.json";
+        try {
+            // Read JSON file as a string
+            String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+
+            // Parse JSON string into JSONObject
+            // Parse JSON content as an array
+            JSONArray jsonArray = new JSONArray(content);
+
+            // Iterate through the array
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                String title = jsonObject.getString("title");
+                String articleContent = jsonObject.getString("content");
+
+                System.out.println("Title: " + title);
+                System.out.println("Content: " + articleContent);
+                System.out.println("-------------------");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

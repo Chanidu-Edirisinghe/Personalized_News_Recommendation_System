@@ -1,6 +1,6 @@
 import java.time.LocalDate;
 
-class Interaction {
+public class Interaction {
     private int interaction_id;
     private User user;
     private Article article;
@@ -29,5 +29,13 @@ class Interaction {
 
     public void setInteractionType(String interactionType) {
         this.interactionType = interactionType;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Article getArticle() {
+        return article;
     }
 }

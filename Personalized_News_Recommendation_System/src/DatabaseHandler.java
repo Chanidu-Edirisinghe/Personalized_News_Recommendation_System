@@ -3,32 +3,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseHandler {
-    private Connection conn;
+    private static final String url = "jdbc:sqlite:news_recommendation_system.db";
 
     public DatabaseHandler(){
     }
 
-    public void connect() {
-        try {
-            this.conn = DriverManager.getConnection("jdbc:sqlite:news_recommendation_system.db");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    private static Connection getConnection() throws SQLException{
+        return DriverManager.getConnection(url);
     }
 
-    public void closeConnection(){
-        try {
-            this.conn.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+//    public void connect() {
+//        try {
+//            this.conn = DriverManager.getConnection("jdbc:sqlite:news_recommendation_system.db");
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+//    public void closeConnection(){
+//        try {
+//            this.conn.close();
+//        }
+//        catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 
-    public boolean authenticate(String username, String password){
+    public boolean login(String username, String password){
         String sql = "SELECT * FROM Users WHERE username = ? AND password = ?";
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
             pst.setString(1, username);
             pst.setString(2, password);
 
@@ -41,9 +46,10 @@ public class DatabaseHandler {
         return false; // Return false if no match is found or an error occurs
     }
 
-    public int saveNewUser(String username, String password, String firstname, String lastname) {
+    public int register(String username, String password, String firstname, String lastname) {
         String sql = "INSERT INTO Users (username, password, firstname, lastname, role) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pst.setString(1, username);
             pst.setString(2, password);
@@ -54,7 +60,6 @@ public class DatabaseHandler {
             int affectedRows = pst.executeUpdate();
 
             if (affectedRows > 0) {
-                // Fetch the generated user ID
                 try (ResultSet rs = pst.getGeneratedKeys()) {
                     if (rs.next()) {
                         return rs.getInt(1); // Return the generated user ID
@@ -67,9 +72,11 @@ public class DatabaseHandler {
         return -1; // Indicate failure
     }
 
+
     public void savePreference(int userID, Preference preference){
         String sql = "INSERT INTO Preferences (user_id, category, interest_level) VALUES (?, ?, ?)";
-        try (PreparedStatement pst = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setInt(1, userID);
             pst.setString(2, String.valueOf(preference.getCategory()));
             pst.setInt(3, preference.getInterestLevel());
@@ -83,7 +90,8 @@ public class DatabaseHandler {
     public void saveInteraction(Interaction interaction){
         String sql = "INSERT INTO Interactions (interaction_id, userID, article_id, " +
                 "interaction_type, interaction_date) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement pst = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setInt(1, interaction.getInteraction_id());
             pst.setInt(2, interaction.getUser().getUserID());
             pst.setInt(3, interaction.getArticle().getArticleID());
@@ -107,7 +115,8 @@ public class DatabaseHandler {
 
     public boolean saveNewArticle(Article article) {
         String sql = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
             pst.setString(1, article.getTitle());
             pst.setString(2, article.getContent());
             pst.setString(3, String.valueOf(article.getCategory()));
@@ -125,7 +134,8 @@ public class DatabaseHandler {
 
     public boolean saveUpdatedArticle(Article article){
         String sql = "UPDATE Articles SET title = ?, content = ? WHERE article_id = ?";
-        try (PreparedStatement pst = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setString(1, article.getTitle());
             pst.setString(2, article.getContent());
             pst.setInt(3, article.getArticleID());
@@ -139,7 +149,8 @@ public class DatabaseHandler {
 
     public boolean removeDeletedArticle(int article_id){
         String sql = "DELETE FROM Articles WHERE article_id = ?";
-        try(PreparedStatement pst = conn.prepareStatement(sql)){
+        try(Connection conn = getConnection();
+            PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setInt(1, article_id);
             return true;
         }
@@ -151,7 +162,8 @@ public class DatabaseHandler {
 
     public boolean checkUsernameAvailability(String username) {
         String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND role = 'USER'";
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
             pst.setString(1, username);
             ResultSet rs = pst.executeQuery();
 
@@ -170,7 +182,8 @@ public class DatabaseHandler {
         // SQL query to delete the user based on their unique identifier (e.g., user_id or username)
         String deleteSQL = "DELETE FROM Users WHERE user_id = ?";
 
-        try (PreparedStatement pst = conn.prepareStatement(deleteSQL)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(deleteSQL)) {
 
             // Set the user_id parameter
             pst.setInt(1, user_id);
@@ -194,7 +207,8 @@ public class DatabaseHandler {
         List<String> userDetailsList = new ArrayList<>();
         String sql = "SELECT user_id, username, password, firstname, lastname, registration_date, role FROM Users WHERE username LIKE ?";
 
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
 
             pst.setString(1, username); // Support partial matches
             ResultSet rs = pst.executeQuery();
@@ -218,7 +232,8 @@ public class DatabaseHandler {
         List<List<String>> articleList = new ArrayList<>();
         String sql = "SELECT article_id, title FROM Articles";
 
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
 
             ResultSet rs = pst.executeQuery();
 
@@ -235,26 +250,28 @@ public class DatabaseHandler {
         return articleList; // Return the list of user details
     }
 
-    public boolean updateUserDetails(User user){
-        String sql = "UPDATE Users SET username = ?, password = ? firstname = ?, lastname = ? " +
+    public void updateUserDetails(User user){
+        String sql = "UPDATE Users SET username = ?, password = ?, firstname = ?, lastname = ? " +
                 "WHERE user_id = ?";
-        try (PreparedStatement pst = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setString(1, user.getUsername());
             pst.setString(2, user.getPassword());
             pst.setString(3, user.getFirstName());
             pst.setString(4, user.getLastName());
-            return true;
+            pst.setInt(5, user.getUserID());
+            pst.executeUpdate();
         }
         catch(SQLException e){
             e.printStackTrace();
         }
-        return false;
     }
 
     public List<List<String>> fetchFilteredArticles(Category category){
         List<List<String>> articleList = new ArrayList<>();
         String sql = "SELECT article_id, title, content FROM Articles WHERE category = ?";
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
 
             ResultSet rs = pst.executeQuery();
 
@@ -273,7 +290,8 @@ public class DatabaseHandler {
 
     public void updatePreference(int user_id, Preference preference){
         String sql = "UPDATE Preferences SET interest_level = ? WHERE user_id = ? AND category = ?";
-        try (PreparedStatement pst = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setInt(1, preference.getInterestLevel());
             pst.setInt(2, user_id);
             pst.setString(3, preference.getCategory().toString());
@@ -284,11 +302,11 @@ public class DatabaseHandler {
         }
     }
 
-
     public List<List<String>> fetchRegisteredUsers(){
         List<List<String>> users = new ArrayList<>();
         String sql = "SELECT user_id, username, password, firstname, lastname, role FROM Users";
-        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
             ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {

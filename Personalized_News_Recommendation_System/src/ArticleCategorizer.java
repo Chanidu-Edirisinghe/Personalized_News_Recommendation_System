@@ -60,7 +60,7 @@ public class ArticleCategorizer {
     public void categorizeArticles(String article) {
         try {
             // Path to Python script
-            String pythonScript = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\CW\\Personalized_News_Recommendation_System\\python_scripts\\keyword_extractor.py"; // Update with actual path
+            String pythonScript = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\CW\\Personalized_News_Recommendation_System\\python_scripts\\keyword_extractor.py";
 
             // Call the Python script
             ProcessBuilder pb = new ProcessBuilder("python", pythonScript, article);

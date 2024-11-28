@@ -1,23 +1,15 @@
+import java.time.LocalDate;
+
 public class Admin extends SystemUser{
 
     private DatabaseHandler dbh = new DatabaseHandler();
 
-    public Admin(int user_id, String username, String password, String firstName, String lastName){
-        super(user_id, username, password, firstName, lastName, Role.ADMIN);
-    }
-
-    public void manageUserAccounts(){
-
-    }
-
-    public void manageArticles(){
-
+    public Admin(int user_id, String username, String password, String firstName, String lastName, LocalDate regDate){
+        super(user_id, username, password, firstName, lastName, regDate, Role.ADMIN);
     }
 
     public void deactivateUserProfile(int user_id){
-        dbh.connect();
         dbh.removeUser(user_id);
-        dbh.closeConnection();
     }
 
     public void addArticle(){
@@ -29,9 +21,7 @@ public class Admin extends SystemUser{
     }
 
     public void deleteArticle(int article_id){
-        dbh.connect();
         dbh.removeDeletedArticle(article_id);
-        dbh.closeConnection();
     }
 
     public void resetPassword(){
@@ -39,9 +29,7 @@ public class Admin extends SystemUser{
     }
 
     public void displayRegisteredUsers(){
-        dbh.connect();
         System.out.println(dbh.fetchRegisteredUsers());
-        dbh.closeConnection();
     }
 
     public static void generateNewPassword(){

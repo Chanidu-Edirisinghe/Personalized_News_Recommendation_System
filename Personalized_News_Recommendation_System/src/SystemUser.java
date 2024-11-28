@@ -15,43 +15,28 @@ public class SystemUser {
     private Role role;
 
     public SystemUser(int userID, String username, String password, String firstname,
-                      String lastname, Role role){
+                      String lastname, LocalDate registrationDate, Role role){
         this.userID = userID;
         this.username = username;
         this.password = password;
         this.firstName = firstname;
         this.lastName = lastname;
         this.role = role;
-        this.registrationDate = LocalDate.now();
+        this.registrationDate = registrationDate;
     }
 
-    public SystemUser(String username, String password, String firstname,
-                      String lastname, Role role){
+    public SystemUser(int user_id, String username, String password, String firstname,
+                      String lastname, LocalDate registrationDate){
+        this.userID = userID;
         this.username = username;
         this.password = password;
         this.firstName = firstname;
         this.lastName = lastname;
-        this.role = role;
         this.registrationDate = LocalDate.now();
     }
 
     public SystemUser() {
 
-    }
-
-    public static List<String> login(String username, String password) {
-        DatabaseHandler dbHandler = new DatabaseHandler();
-        dbHandler.connect();
-        boolean isValid = dbHandler.authenticate(username, password);
-        if (isValid) {
-            List<String> details = dbHandler.getUserDetails(username);
-            dbHandler.closeConnection();
-            return details;
-        } else {
-            // Login failed, return null
-            dbHandler.closeConnection();
-            return null;
-        }
     }
 
 

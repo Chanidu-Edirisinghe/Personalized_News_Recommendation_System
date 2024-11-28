@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 public class Article {
-    private String articleID;
+    private int articleID;
     private String title;
     private String content;
     private Category category;
@@ -19,7 +19,7 @@ public class Article {
         return category;
     }
 
-    public String getArticleID() {
+    public int getArticleID() {
         return articleID;
     }
 

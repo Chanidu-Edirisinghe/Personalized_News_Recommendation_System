@@ -8,7 +8,7 @@ public class ArticleFetcher {
 
     }
 
-    public void manual(){
+    public void manual(String title, String content){
 
     }
 }

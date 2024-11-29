@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,24 +12,6 @@ public class DatabaseHandler {
     private static Connection getConnection() throws SQLException{
         return DriverManager.getConnection(url);
     }
-
-//    public void connect() {
-//        try {
-//            this.conn = DriverManager.getConnection("jdbc:sqlite:news_recommendation_system.db");
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    public void closeConnection(){
-//        try {
-//            this.conn.close();
-//        }
-//        catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
 
     public boolean login(String username, String password){
         String sql = "SELECT * FROM Users WHERE username = ? AND password = ?";
@@ -47,15 +30,18 @@ public class DatabaseHandler {
     }
 
     public int register(String username, String password, String firstname, String lastname) {
-        String sql = "INSERT INTO Users (username, password, firstname, lastname, role) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Users (user_id, username, password, firstname, lastname, role) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            pst.setString(1, username);
-            pst.setString(2, password);
-            pst.setString(3, firstname);
-            pst.setString(4, lastname);
-            pst.setString(5, "USER");
+            int user_id = getRecycledUserID();
+            if(user_id != -1){
+                pst.setInt(1, user_id);
+            }
+            pst.setString(2, username);
+            pst.setString(3, password);
+            pst.setString(4, firstname);
+            pst.setString(5, lastname);
+            pst.setString(6, "USER");
 
             int affectedRows = pst.executeUpdate();
 
@@ -71,7 +57,6 @@ public class DatabaseHandler {
         }
         return -1; // Indicate failure
     }
-
 
     public void savePreference(int userID, Preference preference){
         String sql = "INSERT INTO Preferences (user_id, category, interest_level) VALUES (?, ?, ?)";
@@ -113,23 +98,36 @@ public class DatabaseHandler {
 //                + ");";
     }
 
-    public boolean saveNewArticle(Article article) {
-        String sql = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
+    public Article saveNewArticle(String title, String content, Category category) {
+        String sql = "INSERT INTO Articles (article_id, title, content, category) VALUES (?, ?, ?)";
         try (Connection conn = getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, article.getTitle());
-            pst.setString(2, article.getContent());
-            pst.setString(3, String.valueOf(article.getCategory()));
+             PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            int article_id = getRecycledArticleID();
+            if(article_id != -1){
+                pst.setInt(1, article_id);
+            }
+            // Set the parameters for the query
+            pst.setString(2, title);
+            pst.setString(3, content);
+            pst.setString(4, category.toString());
+
+            // Execute the update
             int rowsAffected = pst.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Article added successfully!");
-                return true;
+                // Retrieve the generated keys
+                try (ResultSet rs = pst.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        int articleId = rs.getInt(1); // Get the generated ID
+                        // Create and return a new Article object with the ID
+                        return new Article(articleId, title, content, category);
+                    }
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        return null; // Return null in case of failure
     }
 
     public boolean saveUpdatedArticle(Article article){
@@ -147,18 +145,36 @@ public class DatabaseHandler {
         return false;
     }
 
-    public boolean removeDeletedArticle(int article_id){
+    public boolean removeDeletedArticle(int article_id) {
         String sql = "DELETE FROM Articles WHERE article_id = ?";
-        try(Connection conn = getConnection();
-            PreparedStatement pst = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
+
+            // Enable foreign keys for this connection (ensure cascade is applied)
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("PRAGMA foreign_keys = ON;");
+            }
+
+            // Set the article_id parameter
             pst.setInt(1, article_id);
-            return true;
-        }
-        catch(SQLException e){
+
+            // Execute the deletion and check how many rows were affected
+            int rowsAffected = pst.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Article with ID " + article_id + " successfully deleted.");
+                return true;
+            } else {
+                System.out.println("No article found with ID " + article_id);
+                return false;
+            }
+
+        } catch (SQLException e) {
             e.printStackTrace();
+            System.err.println("Error occurred while deleting the article: " + e.getMessage());
         }
         return false;
     }
+
 
     public boolean checkUsernameAvailability(String username) {
         String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND role = 'USER'";
@@ -184,6 +200,11 @@ public class DatabaseHandler {
 
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(deleteSQL)) {
+
+            // Enable foreign keys for this connection
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("PRAGMA foreign_keys = ON;");
+            }
 
             // Set the user_id parameter
             pst.setInt(1, user_id);
@@ -228,26 +249,28 @@ public class DatabaseHandler {
         return userDetailsList; // Return the list of user details
     }
 
-    public List<List<String>> fetchArticles() {
-        List<List<String>> articleList = new ArrayList<>();
-        String sql = "SELECT article_id, title FROM Articles";
+    public List<Article> fetchArticles() {
+        List<Article> articleList = new ArrayList<>();
+        String sql = "SELECT article_id, title, content, category FROM Articles";
 
         try (Connection conn = getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-
-            ResultSet rs = pst.executeQuery();
+             PreparedStatement pst = conn.prepareStatement(sql);
+             ResultSet rs = pst.executeQuery()) {
 
             while (rs.next()) {
-                List<String> articleDetails = new ArrayList<>();
-                articleDetails.add(rs.getString("article_id"));
-                articleDetails.add(rs.getString("title"));
-                // Add the single user's details to the main list
-                articleList.add(articleDetails);
+                int id = rs.getInt("article_id");
+                String title = rs.getString("title");
+                String content = rs.getString("content");
+                String category = rs.getString("category");
+
+                // Create a new Article object
+                Article article = new Article(id, title, content, Category.valueOf(category.toUpperCase()));
+                articleList.add(article);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return articleList; // Return the list of user details
+        return articleList;
     }
 
     public void updateUserDetails(User user){
@@ -302,21 +325,26 @@ public class DatabaseHandler {
         }
     }
 
-    public List<List<String>> fetchRegisteredUsers(){
-        List<List<String>> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, password, firstname, lastname, role FROM Users";
+    public List<SystemUser> fetchRegisteredUsers() {
+        List<SystemUser> users = new ArrayList<>();
+        String sql = "SELECT user_id, username, password, firstname, lastname, registration_date, role FROM Users";
+
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
+
             ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {
-                List<String> user = new ArrayList<>();
-                user.add(rs.getString("user_id"));
-                user.add(rs.getString("username"));
-                user.add(rs.getString("password"));
-                user.add(rs.getString("firstname"));
-                user.add(rs.getString("lastname"));
-                user.add(rs.getString("role"));
+                // Create a User object for each row in the result set
+                SystemUser user = new SystemUser(
+                        rs.getInt("user_id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("firstname"),
+                        rs.getString("lastname"),
+                        LocalDate.parse(rs.getString("registration_date")),
+                        Role.valueOf(rs.getString("role"))
+                );
                 users.add(user);
             }
         } catch (SQLException e) {
@@ -325,5 +353,105 @@ public class DatabaseHandler {
         return users;
     }
 
+    public boolean resetPassword(int user_id, String pw){
+        String sql = "UPDATE Users SET password = ? WHERE user_id = ?";
+        try(Connection conn = getConnection();
+            PreparedStatement pst = conn.prepareStatement(sql)){
+            pst.setString(1, pw);
+            pst.setInt(2, user_id);
+            int rowsAffected = pst.executeUpdate(); // Returns the number of rows updated
+            if (rowsAffected > 0) {
+                return true; // Update was successful
+            } else {
+                System.out.println("User ID does not exist.");
+                return false; // No rows affected
+            }
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
 
+    public boolean addDeletedUserID(int user_id) {
+        String sql = "INSERT INTO RecycledUserIDs (user_id) VALUES (?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setInt(1, user_id); // Set the user_id parameter
+            int affectedRows = pst.executeUpdate(); // Execute the insert query
+
+            return affectedRows > 0; // Return true if insertion was successful
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log the exception for debugging
+            return false; // Return false if insertion failed
+        }
+    }
+
+    public boolean addDeletedArticleID(int article_id) {
+        String sql = "INSERT INTO RecycledArticleIDs (article_id) VALUES (?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setInt(1, article_id); // Set the article_id parameter
+            int affectedRows = pst.executeUpdate(); // Execute the insert query
+
+            return affectedRows > 0; // Return true if insertion was successful
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log the exception for debugging
+            return false; // Return false if insertion failed
+        }
+    }
+
+    public int getRecycledUserID() {
+        String selectSQL = "SELECT user_id FROM RecycledUserIDs ORDER BY user_id ASC LIMIT 1";
+        String deleteSQL = "DELETE FROM RecycledUserIDs WHERE user_id = ?";
+        int userID = -1;
+
+        try (Connection conn = getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectSQL);
+             ResultSet rs = selectStmt.executeQuery()) {
+
+            // Check if there is a user_id available
+            if (rs.next()) {
+                userID = rs.getInt("user_id");
+
+                // Remove the retrieved user_id from the table
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSQL)) {
+                    deleteStmt.setInt(1, userID);
+                    deleteStmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log exception for debugging
+        }
+
+        return userID; // Return the user_id if found, else -1
+    }
+
+    public int getRecycledArticleID() {
+        String selectSQL = "SELECT article_id FROM RecycledArticleIDs ORDER BY article_id ASC LIMIT 1";
+        String deleteSQL = "DELETE FROM RecycledArticleIDs WHERE article_id = ?";
+        int articleID = -1;
+
+        try (Connection conn = getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectSQL);
+             ResultSet rs = selectStmt.executeQuery()) {
+
+            // Check if there is an article_id available
+            if (rs.next()) {
+                articleID = rs.getInt("article_id");
+
+                // Remove the retrieved article_id from the table
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSQL)) {
+                    deleteStmt.setInt(1, articleID);
+                    deleteStmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log exception for debugging
+        }
+
+        return articleID; // Return the user_id if found, else -1
+    }
 }

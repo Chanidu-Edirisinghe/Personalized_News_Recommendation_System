@@ -76,8 +76,12 @@ public class SQLiteTest {
                 + "FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE"
                 + ");";
 
-        String recycledIDsSQL = "CREATE TABLE RecycledUserIDs ("
+        String recycledUserIDs = "CREATE TABLE RecycledUserIDs ("
                 +"user_id INTEGER PRIMARY KEY);";
+
+        String recycledArticleIDs = "CREATE TABLE RecycledArticleIDs ("
+                +"article_id INTEGER PRIMARY KEY);";
+
 
 
         try (Statement stmt = conn.createStatement()) {
@@ -87,7 +91,7 @@ public class SQLiteTest {
 //            stmt.executeUpdate(createKeywordsTableSQL);
 //            stmt.executeUpdate(createInteractionsTableSQL);
 //            stmt.executeUpdate(createPreferencesTableSQL);
-            stmt.executeUpdate(recycledIDsSQL);
+            stmt.executeUpdate(recycledArticleIDs);
             System.out.println("Tables have been created successfully.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -144,7 +148,8 @@ public class SQLiteTest {
         if (conn != null) {
             // Create tables if the connection is successful
             //makeTables(conn);
-            addArticle("culture", conn);
+            String filepath = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\WebScraper\\ArticleClassification\\culture.json";
+            addArticle(filepath, "culture", conn);
             
             // Close the connection
             try {
@@ -156,12 +161,11 @@ public class SQLiteTest {
         }
     }
 
-    public static void addArticle(String category, Connection conn){
+    public static void addArticle(String filepath, String category, Connection conn){
         String insertSQL = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
-        String jsonFilePath = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\WebScraper\\ArticleClassification\\culture.json";
         try (PreparedStatement pst = conn.prepareStatement(insertSQL)) {
             // Read and parse the JSON file
-            String content = new String(Files.readAllBytes(Paths.get(jsonFilePath)));
+            String content = new String(Files.readAllBytes(Paths.get(filepath)));
             JSONArray jsonArray = new JSONArray(content);
 
             // Iterate through the JSON array and insert articles

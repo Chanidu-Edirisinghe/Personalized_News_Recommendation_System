@@ -27,9 +27,21 @@ public class Driver {
                                         handleProfileUpdate(scanner, user);
                                         break;
                                     case "2":
-                                        user.viewArticles();
+                                        List<Article> articles = user.viewArticles();
+                                        handleViewArticles();
+                                        String choice2 = scanner.nextLine();
+                                        switch (choice2) {
+                                            case "1":
+                                                handleDisplayArticle(scanner, articles);
+                                                break;
+                                            case "2":
+                                                // filter the articles and display to user
+                                                // ask for article id to view
+                                                break;
+                                        }
                                         break;
                                     case "3":
+                                        // get recommendations
                                     case "4":
                                         System.out.println("Exiting user menu...");
                                         break;
@@ -43,16 +55,93 @@ public class Driver {
                         }
                         else{
                             // admin menu
-                            displayAdminMenu();
-                            Admin admin = createAdmin(userDetails);
-                            String choice2 = scanner.nextLine();
-                            switch (choice2) {
-                                case "1":
-
+                            while (true) {
+                                displayAdminMenu();
+                                Admin admin = createAdmin(userDetails);
+                                String choice2 = scanner.nextLine();
+                                switch (choice2) {
+                                    case "1": // Manage users
+                                        while (true) {
+                                            handleManageUsers();
+                                            String choice3 = scanner.nextLine();
+                                            switch (choice3) {
+                                                case "1":
+                                                    admin.displayRegisteredUsers();
+                                                    handlePwReset(admin, scanner);
+                                                    break;
+                                                case "2":
+                                                    admin.displayRegisteredUsers();
+                                                    handleUserDeactivation(admin, scanner);
+                                                    break;
+                                                case "3":
+                                                    System.out.println("Exiting menu...");
+                                                    break;
+                                                default:
+                                                    System.out.println("Invalid choice. Please try again.");
+                                            }
+                                            if (choice3.equals("3")) {
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    case "2": // Manage articles
+                                        while(true) {
+                                            handleManageArticles();
+                                            String choice4 = scanner.nextLine();
+                                            switch (choice4) {
+                                                case "1":
+                                                    handleAddArticle();
+                                                    while (true) {
+                                                        String choice5 = scanner.nextLine();
+                                                        switch (choice5) {
+                                                            case "1":
+                                                                handleManualAdd(scanner);
+                                                                break;
+                                                            case "2":
+                                                                System.out.println("External DB selected");
+                                                                break;
+                                                            case "3":
+                                                                System.out.println("Json files selected");
+                                                                break;
+                                                            case "4":
+                                                                System.out.println("Exiting menu...");
+                                                                break;
+                                                            default:
+                                                                System.out.println("Invalid choice. Please try again.");
+                                                        }
+                                                        if (choice5.equals("4")) {
+                                                            break;
+                                                        }
+                                                    } // add articles
+                                                    break;
+                                                case "2":
+                                                    // edit article
+                                                    handleEditArticle(admin, scanner);
+                                                    break;
+                                                case "3":
+                                                    // delete article
+                                                    handleDeleteArticle(admin, scanner);
+                                                    break;
+                                                case "4":
+                                                    System.out.println("Exiting menu...");
+                                                    break;
+                                                default:
+                                                    System.out.println("Invalid choice. Please try again.");
+                                            }
+                                            if (choice4.equals("4")) {
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    case "3":
+                                        System.out.println("Exiting menu...");
+                                        break;
+                                    default:
+                                        System.out.println("Invalid choice. Please try again.");
+                                }
+                                if (choice2.equals("3")) {
                                     break;
-                                case "2":
-
-                                    break;
+                                }
                             }
                         }
                     }
@@ -76,7 +165,79 @@ public class Driver {
         }
     }
 
-    // Displays the main menu
+    private static void handleAddArticle(){
+        System.out.println("Please choose an option:");
+        System.out.println("1. Add manually");
+        System.out.println("2. Add from external DB");
+        System.out.println("3. Add from json files");
+        System.out.println("4. Go back");
+        System.out.print("Enter your choice (1, 2, 3, 4): ");
+    }
+
+    private static void handleViewArticles(){
+        System.out.println("Welcome! Please choose an option:");
+        System.out.println("1. Select article to read");
+        System.out.println("2. Filter articles by category");
+        System.out.print("Enter your choice (1, 2): ");
+    }
+
+    private static void handlePwReset(Admin admin, Scanner scanner){
+        System.out.println("Password reset selected.\n");
+        try {
+            System.out.print("Please choose a user ID: ");
+            int user_id = Integer.parseInt(scanner.nextLine().trim());
+            if (user_id <= 0) {
+                System.out.println("User ID must be a positive number. Try again.");
+            }
+            else {
+                admin.resetPassword(user_id);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input.");
+        }
+    }
+
+    private static void handleUserDeactivation(Admin admin, Scanner scanner){
+        System.out.println("Deactivate user selected.");
+        try {
+            System.out.print("Please choose a user ID: ");
+            int user_id = Integer.parseInt(scanner.nextLine().trim());
+            if (user_id <= 0) {
+                System.out.println("User ID must be a positive number. Try again.");
+            }
+            else {
+                System.out.print("Enter user ID to reconfirm deletion: ");
+                int re_user_id = Integer.parseInt(scanner.nextLine().trim());
+                if(user_id == re_user_id){
+                    admin.deactivateUserProfile(user_id);
+                }
+                else{
+                    System.out.println("Reconfirmation failed.");
+                }
+
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input.");
+        }
+    }
+
+    private static void handleManageUsers(){
+        System.out.println("Please choose an option:");
+        System.out.println("1. Reset user password.");
+        System.out.println("2. Deactivate user account.");
+        System.out.println("3. Go back.");
+        System.out.print("Enter your choice (1, 2, 3): ");
+    }
+
+    private static void handleManageArticles(){
+        System.out.println("Please choose an option:");
+        System.out.println("1. Add article.");
+        System.out.println("2. Edit article.");
+        System.out.println("3. Delete article.");
+        System.out.println("4. Go back.");
+        System.out.print("Enter your choice (1, 2, 3, 4): ");
+    }
+
     private static void displayMenu() {
         System.out.println("Welcome! Please choose an option:");
         System.out.println("1. Login");
@@ -100,10 +261,10 @@ public class Driver {
         System.out.println("Please choose an option:");
         System.out.println("1. Manage Users"); // reset password, deactivate accounts
         System.out.println("2. Manage articles"); // add, edit, delete articles
-        System.out.print("Enter your choice (1, 2): ");
+        System.out.println("3. Logout");
+        System.out.print("Enter your choice (1, 2, 3): ");
     }
 
-    // Handles the login flow
     private static List<String> handleLogin(Scanner scanner) {
         //dbHandler.connect();
         System.out.println("Login selected.");
@@ -121,7 +282,6 @@ public class Driver {
         }
     }
 
-    // Handles the registration flow
     private static User handleRegister(Scanner scanner) {
         //dbHandler.connect();
         System.out.println("Registration selected.");
@@ -194,6 +354,35 @@ public class Driver {
                     userDetails.get(4),
                     LocalDate.parse(userDetails.get(5))
             );
+
+            // Get initial preferences from user
+            System.out.println("Choose categories you are interested in.");
+            for(int i = 0; i < Category.values().length - 1; i++){
+                System.out.println((i+1) +". "+ Category.values()[i]);
+            }
+            System.out.println("Enter category numbers one by one. Enter x to stop.");
+            System.out.println("Example: Enter 1 to select CULTURE.");
+            List<String> catNums = new ArrayList<>();
+            while(true){
+                System.out.print("\nEnter number: "); // add validation
+                String number = scanner.nextLine().trim();
+                if(number.equalsIgnoreCase("x")){
+                    break;
+                }
+                catNums.add(number);
+            }
+            // set initial preferences for user
+            Category[] categories = Category.values();
+            for (int i = 0; i < categories.length - 1; i++) {
+                user.addPreference(new Preference(categories[i], 0));
+            }
+
+
+            // update preferences based on input
+            for(String catNum:catNums){
+                user.updatePreferences(Integer.parseInt(catNum)-1, 5);
+            }
+
             System.out.println("Registration successful! Welcome, " + user.getFirstName() + "!");
             return user;
         } else {
@@ -250,180 +439,89 @@ public class Driver {
                 userDetails.get(4), LocalDate.parse(userDetails.get(5)));
     }
 
+    private static void handleManualAdd(Scanner scanner) {
+        System.out.println("Manual selected\n");
+        System.out.print("Enter title: ");
+        String title = scanner.nextLine();
+        System.out.print("Enter content: ");
+        String content = scanner.nextLine();
+        String category = Objects.requireNonNull(ArticleCategorizer.categorizeArticles(title + " " + content)).toUpperCase();
+        // get recycled article ids from db if available, then make article object
+        Article article = dbHandler.saveNewArticle(title, content, Category.valueOf(category));
+        if(article != null){
+            System.out.println("Article added.");
+        }
+    }
 
+    private static void handleDisplayArticle(Scanner scanner, List<Article> articles) {
+        System.out.print("Enter the article ID: ");
+        String id = scanner.nextLine(); // add validation
 
+        // Search for the article with the matching ID
+        Article matchedArticle = null;
+        for (Article article : articles) {
+            if (article.getArticleID() == Integer.parseInt(id)) { // Assuming Article has a getId() method
+                matchedArticle = article;
+                break;
+            }
+        }
 
+        // If an article is found, display it; otherwise, print an error message
+        if (matchedArticle != null) {
+            matchedArticle.displayArticle(); // Assuming Article has a displayArticle() method
+        } else {
+            System.out.println("No article found with the given ID.");
+        }
+    }
 
+    private static void handleDeleteArticle(Admin admin, Scanner scanner){
+        admin.viewArticles();
+        System.out.print("\nEnter article ID: ");
+        String id = scanner.nextLine();
+        // validate id
+        admin.deleteArticle(Integer.parseInt(id));
+    }
 
+    private static void handleEditArticle(Admin admin, Scanner scanner) {
+        List<Article> articles = admin.viewArticles();
+        System.out.print("\nEnter article ID: ");
+        String id = scanner.nextLine();
 
+        // Validate ID
+        Article selectedArticle = null;
+        for (Article article : articles) {
+            if (article.getArticleID() == Integer.parseInt(id)) {
+                selectedArticle = article;
+                break;
+            }
+        }
 
+        if (selectedArticle == null) {
+            System.out.println("Invalid article ID.");
+            return;
+        }
 
+        // Display the article details
+        selectedArticle.displayArticle();
 
-//
-//    public static void m1(String[] args) {
-//        String back = "";
-//        DatabaseHandler dbh = new DatabaseHandler();
-//        List<Integer> preferenceNums = null;
-//        int c = 10;
-//        while(c > 0) {
-//            Scanner scanner = new Scanner(System.in);
-//            System.out.println("Welcome to the News Recommendation System!");
-//            System.out.println("Please choose an option:");
-//            System.out.println("1. Login");
-//            System.out.println("2. Register");
-//
-//            int choice = 0;
-//            while (choice != 1 && choice != 2) {
-//                System.out.print("Enter your choice (1 or 2): ");
-//                if (scanner.hasNextInt()) {
-//                    choice = scanner.nextInt();
-//                    if (choice != 1 && choice != 2) {
-//                        System.out.println("Invalid choice. Please enter 1 or 2.");
-//                    }
-//                } else {
-//                    System.out.println("Invalid input. Please enter a number.");
-//                    scanner.next(); // Clear the invalid input
-//                }
-//            }
-//
-//            scanner.nextLine(); // Consume leftover newline character
-//
-//            if (choice == 1) {
-//                while(true) {
-//                    System.out.println("Login selected.");
-//                    System.out.println("Enter x to go back to menu.");
-//                    back = scanner.nextLine();
-//                    if (back.equalsIgnoreCase("x")) {
-//                        break;
-//                    }
-//                    System.out.print("Enter username: ");
-//                    String username = scanner.nextLine();
-//                    System.out.print("Enter password: ");
-//                    String password = scanner.nextLine();
-//
-//                    List<String> userDetails = SystemUser.login(username, password);
-//
-//                    if (userDetails != null && Objects.equals(userDetails.getLast(), "USER")) {
-//                        User user = new User(
-//                                Integer.parseInt(userDetails.get(0)),
-//                                userDetails.get(1),
-//                                userDetails.get(2),
-//                                userDetails.get(3),
-//                                userDetails.get(4)
-//                        );
-//                        System.out.println("Login successful! Welcome, " + userDetails.get(4) + "!");
-//                        System.out.println("Enter x to go back to menu.");
-//                        back = scanner.nextLine();
-//                        if (back.equalsIgnoreCase("x")) {
-//                            break;
-//                        }
-//                        System.out.println("Please choose an option:");
-//                        System.out.println("1. Manage Profile");
-//                        System.out.println("2. View articles");
-//                        System.out.println("3. Get recommendations");
-//                        System.out.print("Enter your choice (1, 2, 3): ");
-//                        choice = 0;
-//                        while (choice != 1 && choice != 2 && choice != 3) {
-//                            if (scanner.hasNextInt()) {
-//                                choice = scanner.nextInt();
-//                                if (choice != 1 && choice != 2 && choice != 3) {
-//                                    System.out.println("Invalid choice. Please enter 1, 2, 3.");
-//                                }
-//                            } else {
-//                                System.out.println("Invalid input. Please enter a number.");
-//                                scanner.next(); // Clear the invalid input
-//                            }
-//                        }
-//
-//                        scanner.nextLine(); // Consume leftover newline character
-//                        System.out.println("The rest of the process to be filled.");
-//                        // Add options for user.
-//                    } else if (userDetails != null && Objects.equals(userDetails.getLast(), "ADMIN")) {
-//                        continue;
-//                    } else {
-//                        System.out.println("Invalid credentials. Please try again.");
-//                    }
-//                }
-//            }
-//            else {
-//                while(true) {
-//                    System.out.println("Register selected.");
-//
-//                    System.out.println("Enter x to go back to menu.");
-//                    back = scanner.nextLine();
-//                    if (back.equalsIgnoreCase("x")) {
-//                        break;
-//                    }
-//
-//                    System.out.print("Enter username: ");
-//                    String username = scanner.nextLine();
-//                    dbh.connect();
-//                    while (!dbh.checkUsernameAvailability(username)) {
-//                        System.out.print("Enter username: ");
-//                        username = scanner.nextLine();
-//                    }
-//                    dbh.closeConnection();
-//
-//                    System.out.print("Enter password: ");
-//                    String password = scanner.nextLine();
-//                    System.out.print("Enter first name: ");
-//                    String firstname = scanner.nextLine();
-//                    System.out.print("Enter last name: ");
-//                    String lastname = scanner.nextLine();
-//
-//                    System.out.println("Please enter the news article categories you like.");
-//                    System.out.println("Input format: 1,2,3,7,10,...");
-//                    int v1 = 1;
-//                    for (Category category : Category.values()) {
-//                        System.out.format("%d.  %s\n", v1, category);
-//                        v1++;
-//                    }
-//                    boolean isValid = false;
-//                    while(!isValid) {
-//                        String preferences = scanner.nextLine();
-//                        preferenceNums= Arrays.stream(preferences.split(","))
-//                                .map(Integer::parseInt)
-//                                .toList();
-//
-//                        isValid = preferenceNums.stream()
-//                                .allMatch(num -> num >= 1 && num <= 10);
-//
-//                        if (!isValid) {
-//                            System.out.println("Invalid");
-//                        } else {
-//                            System.out.println("Valid");
-//                        }
-//                    }
-//
-//                    User newUser;
-//                    int user_id = User.register(username, password, firstname, lastname);
-//                    if (user_id != -1) {
-//                        newUser = new User(user_id, username, password, firstname, lastname);
-//
-//                        Category[] categories = Category.values();
-//                        for(Category category: categories){
-//                            newUser.addPreference(new Preference(category, 0));
-//                        }
-//
-//                        for (int pref: preferenceNums){
-//                            newUser.updatePreferences(pref-1, categories[pref-1], 1);
-//                        }
-//
-//                        System.out.println("Registration successful! Login to continue.");
-//                        break;
-//                    } else {
-//                        System.out.println("Registration failed. Please try again.");
-//                    }
-//                }
-//            }
-//            c--;
-//        }
-//        //scanner.close();
-//    }
+        // Prompt for new title and content, showing current values as defaults
+        System.out.print("Enter new title (current: \"" + selectedArticle.getTitle() + "\"): ");
+        String newTitle = scanner.nextLine();
 
+        System.out.print("Enter new content (current: \"" + selectedArticle.getContent() + "\"): ");
+        String newContent = scanner.nextLine();
 
+        // Update title and content only if input is provided
+        if (!newTitle.trim().isEmpty()) {
+            selectedArticle.setTitle(newTitle);
+        }
 
-
+        if (!newContent.trim().isEmpty()) {
+            selectedArticle.setContent(newContent);
+        }
+        admin.editArticle(selectedArticle);
+        System.out.println("Article updated successfully!");
+    }
 
 
 }

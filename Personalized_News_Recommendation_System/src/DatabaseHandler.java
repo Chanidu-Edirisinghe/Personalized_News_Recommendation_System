@@ -24,24 +24,21 @@ public class DatabaseHandler {
             // If a match is found, return true
             return rs.next();
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return false; // Return false if no match is found or an error occurs
     }
 
     public int register(String username, String password, String firstname, String lastname) {
-        String sql = "INSERT INTO Users (user_id, username, password, firstname, lastname, role) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Users (username, password, firstname, lastname, role) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            int user_id = getRecycledUserID();
-            if(user_id != -1){
-                pst.setInt(1, user_id);
-            }
-            pst.setString(2, username);
-            pst.setString(3, password);
-            pst.setString(4, firstname);
-            pst.setString(5, lastname);
-            pst.setString(6, "USER");
+
+            pst.setString(1, username);
+            pst.setString(2, password);
+            pst.setString(3, firstname);
+            pst.setString(4, lastname);
+            pst.setString(5, "USER");
 
             int affectedRows = pst.executeUpdate();
 
@@ -72,45 +69,66 @@ public class DatabaseHandler {
         }
     }
 
-    public void saveInteraction(Interaction interaction){
-        String sql = "INSERT INTO Interactions (interaction_id, userID, article_id, " +
-                "interaction_type, interaction_date) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)){
-            pst.setInt(1, interaction.getInteraction_id());
-            pst.setInt(2, interaction.getUser().getUserID());
-            pst.setInt(3, interaction.getArticle().getArticleID());
-            pst.setString(4, interaction.getInteractionType());
-            pst.setString(5, String.valueOf(interaction.getInteractionDate()));
-            pst.executeUpdate();
-        }
-        catch (SQLException e){
-            e.printStackTrace();
-        }
-        //        String createInteractionsTableSQL = "CREATE TABLE Interactions ("
-//                + "interaction_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-//                + "user_id INTEGER NOT NULL, "
-//                + "article_id INTEGER NOT NULL, "
-//                + "interaction_type TEXT CHECK(interaction_type IN ('Read', 'Like', 'Skip')) NOT NULL, "
-//                + "interaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-//                + "FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE, "
-//                + "FOREIGN KEY (article_id) REFERENCES Articles(article_id) ON DELETE CASCADE"
-//                + ");";
-    }
+    public Interaction saveInteraction(User user, Article article, String interaction_type) {
+        String sql = "INSERT INTO Interactions (user_id, article_id, interaction_type) VALUES (?, ?, ?)";
+        Interaction interaction = null;
 
-    public Article saveNewArticle(String title, String content, Category category) {
-        String sql = "INSERT INTO Articles (article_id, title, content, category) VALUES (?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            int article_id = getRecycledArticleID();
-            if(article_id != -1){
-                pst.setInt(1, article_id);
+            // Set values for the prepared statement
+            pst.setInt(1, user.getUserID());
+            pst.setInt(2, article.getArticleID());
+            pst.setString(3, interaction_type);
+
+            // Execute the update
+            int affectedRows = pst.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Retrieve the generated keys
+                try (ResultSet rs = pst.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        int interactionId = rs.getInt(1); // Auto-generated interaction_id
+
+                        // Fetch the interaction_date from the database
+                        String dateQuery = "SELECT interaction_date FROM Interactions WHERE interaction_id = ?";
+                        try (PreparedStatement dateStmt = conn.prepareStatement(dateQuery)) {
+                            dateStmt.setInt(1, interactionId);
+
+                            try (ResultSet dateRs = dateStmt.executeQuery()) {
+                                if (dateRs.next()) {
+                                    String interactionDate = dateRs.getString("interaction_date");
+
+                                    // Create and return the Interaction object
+                                    interaction = new Interaction(
+                                            interactionId,
+                                            user,
+                                            article,
+                                            interaction_type,
+                                            LocalDate.parse(interactionDate)
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
             }
+        } catch (SQLException e) {
+            System.out.println("Issue while connecting to the database.");
+        }
+
+        return interaction;
+    }
+
+    public Article saveNewArticle(String title, String content, Category category) {
+        String sql = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
             // Set the parameters for the query
-            pst.setString(2, title);
-            pst.setString(3, content);
-            pst.setString(4, category.toString());
+            pst.setString(1, title);
+            pst.setString(2, content);
+            pst.setString(3, category.toString());
 
             // Execute the update
             int rowsAffected = pst.executeUpdate();
@@ -130,20 +148,27 @@ public class DatabaseHandler {
         return null; // Return null in case of failure
     }
 
-    public boolean saveUpdatedArticle(Article article){
+    public boolean saveUpdatedArticle(Article article) {
         String sql = "UPDATE Articles SET title = ?, content = ? WHERE article_id = ?";
         try (Connection conn = getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)){
+             PreparedStatement pst = conn.prepareStatement(sql)) {
+
+            // Set values for the prepared statement
             pst.setString(1, article.getTitle());
             pst.setString(2, article.getContent());
             pst.setInt(3, article.getArticleID());
-            return true;
+
+            // Execute the update
+            int affectedRows = pst.executeUpdate();
+
+            // Return true if at least one row was updated
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.out.println("Issue while connecting to the database.");
         }
-        catch(SQLException e){
-            e.printStackTrace();
-        }
-        return false;
+        return false; // Return false if an exception occurs or no rows are updated
     }
+
 
     public boolean removeDeletedArticle(int article_id) {
         String sql = "DELETE FROM Articles WHERE article_id = ?";
@@ -219,8 +244,7 @@ public class DatabaseHandler {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println("Error occurred while deleting the user: " + e.getMessage());
+            System.out.println("Issue while connecting to the database.");
         }
     }
 
@@ -290,26 +314,30 @@ public class DatabaseHandler {
         }
     }
 
-    public List<List<String>> fetchFilteredArticles(Category category){
-        List<List<String>> articleList = new ArrayList<>();
+    public List<Article> fetchFilteredArticles(Category category) {
+        List<Article> articleList = new ArrayList<>();
         String sql = "SELECT article_id, title, content FROM Articles WHERE category = ?";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
 
+            pst.setString(1, category.toString()); // Set the category parameter
             ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {
-                List<String> articleDetails = new ArrayList<>();
-                articleDetails.add(rs.getString("article_id"));
-                articleDetails.add(rs.getString("title"));
-                articleDetails.add(rs.getString("content"));
-                articleList.add(articleDetails);
+                Article article = new Article(
+                        rs.getInt("article_id"),
+                        rs.getString("title"),
+                        rs.getString("content"),
+                        category
+                );
+                articleList.add(article);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return articleList; // Return the list of user details
+        return articleList; // Return the list of Article objects
     }
+
 
     public void updatePreference(int user_id, Preference preference){
         String sql = "UPDATE Preferences SET interest_level = ? WHERE user_id = ? AND category = ?";
@@ -348,7 +376,7 @@ public class DatabaseHandler {
                 users.add(user);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return users;
     }
@@ -373,85 +401,71 @@ public class DatabaseHandler {
         return false;
     }
 
-    public boolean addDeletedUserID(int user_id) {
-        String sql = "INSERT INTO RecycledUserIDs (user_id) VALUES (?)";
-
+    public List<Interaction> getUserInteractions(User user, LocalDate fromDate) {
+        String query = "SELECT * FROM Interactions WHERE user_id = ? AND interaction_date >= ?";
+        List<Interaction> interactions = new ArrayList<>();
         try (Connection conn = getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setInt(1, user_id); // Set the user_id parameter
-            int affectedRows = pst.executeUpdate(); // Execute the insert query
-
-            return affectedRows > 0; // Return true if insertion was successful
-        } catch (SQLException e) {
-            e.printStackTrace(); // Log the exception for debugging
-            return false; // Return false if insertion failed
-        }
-    }
-
-    public boolean addDeletedArticleID(int article_id) {
-        String sql = "INSERT INTO RecycledArticleIDs (article_id) VALUES (?)";
-
-        try (Connection conn = getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setInt(1, article_id); // Set the article_id parameter
-            int affectedRows = pst.executeUpdate(); // Execute the insert query
-
-            return affectedRows > 0; // Return true if insertion was successful
-        } catch (SQLException e) {
-            e.printStackTrace(); // Log the exception for debugging
-            return false; // Return false if insertion failed
-        }
-    }
-
-    public int getRecycledUserID() {
-        String selectSQL = "SELECT user_id FROM RecycledUserIDs ORDER BY user_id ASC LIMIT 1";
-        String deleteSQL = "DELETE FROM RecycledUserIDs WHERE user_id = ?";
-        int userID = -1;
-
-        try (Connection conn = getConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(selectSQL);
-             ResultSet rs = selectStmt.executeQuery()) {
-
-            // Check if there is a user_id available
-            if (rs.next()) {
-                userID = rs.getInt("user_id");
-
-                // Remove the retrieved user_id from the table
-                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSQL)) {
-                    deleteStmt.setInt(1, userID);
-                    deleteStmt.executeUpdate();
+             PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setInt(1, user.getUserID());
+            pst.setDate(2, Date.valueOf(fromDate));
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    Article article = getArticleById(rs.getInt("article_id")); // Fetch related article
+                    interactions.add(new Interaction(
+                            rs.getInt("interaction_id"),
+                            user, // Use the provided User object
+                            article,
+                            rs.getString("interaction_type"),
+                            rs.getDate("interaction_date").toLocalDate() // Correctly parse the LocalDate
+                    ));
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Log exception for debugging
+            e.printStackTrace();
         }
-
-        return userID; // Return the user_id if found, else -1
+        return interactions;
     }
 
-    public int getRecycledArticleID() {
-        String selectSQL = "SELECT article_id FROM RecycledArticleIDs ORDER BY article_id ASC LIMIT 1";
-        String deleteSQL = "DELETE FROM RecycledArticleIDs WHERE article_id = ?";
-        int articleID = -1;
-
+    public Article getArticleById(int articleId) {
+        String query = "SELECT * FROM Articles WHERE article_id = ?";
         try (Connection conn = getConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(selectSQL);
-             ResultSet rs = selectStmt.executeQuery()) {
-
-            // Check if there is an article_id available
-            if (rs.next()) {
-                articleID = rs.getInt("article_id");
-
-                // Remove the retrieved article_id from the table
-                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSQL)) {
-                    deleteStmt.setInt(1, articleID);
-                    deleteStmt.executeUpdate();
+             PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setInt(1, articleId);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    return new Article(
+                            rs.getInt("article_id"),
+                            rs.getString("title"),
+                            rs.getString("content"),
+                            Category.valueOf(rs.getString("category").toUpperCase())
+                    );
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Log exception for debugging
+            e.printStackTrace();
         }
-
-        return articleID; // Return the user_id if found, else -1
+        return null;
     }
+
+    public List<Preference> getUserPreferences(int userId) {
+        String query = "SELECT * FROM Preferences WHERE user_id = ?";
+        List<Preference> preferences = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setInt(1, userId);
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    preferences.add(new Preference(
+                            Category.valueOf(rs.getString("category").toUpperCase()),
+                            rs.getInt("interest_level")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return preferences;
+    }
+
+
 }

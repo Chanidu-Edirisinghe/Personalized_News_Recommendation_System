@@ -13,11 +13,6 @@ public class User extends SystemUser{
         super(user_id, username, password, firstname, lastname, regDate, Role.USER);
     }
 
-    public User(){
-
-    }
-
-
     public void addPreference(Preference preference){
         preferences.add(preference);
         dbh.savePreference(this.getUserID(), preference);
@@ -29,14 +24,14 @@ public class User extends SystemUser{
         dbh.updatePreference(this.getUserID(), pref);
     }
 
-    public void recordInteraction(Interaction interaction){
+    public void recordInteraction(User user, Article article, String interaction_type){
+        Interaction interaction = dbh.saveInteraction(user, article, interaction_type);
         interactions.add(interaction);
-        dbh.saveInteraction(interaction);
     }
 
     public List<Article> getRecommendations(){
         RecommendationEngine re = new RecommendationEngine();
-        return re.generateRecommendations();
+        return re.generateRecommendations(this);
     }
 
     public void viewPreferences(){

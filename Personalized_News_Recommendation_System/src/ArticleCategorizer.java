@@ -9,7 +9,7 @@ public class ArticleCategorizer {
     };
 
     private static final String[] education_keywords = {
-            "ai", "challenges", "classrooms", "digital", "education", "educational",
+            "challenges", "classrooms", "digital", "education", "educational",
             "financial", "future", "learning", "platforms", "schools", "students",
             "teachers", "technology", "world"
     };
@@ -121,5 +121,20 @@ public class ArticleCategorizer {
             }
         }
         return count;
+    }
+
+    public static void main(String[] args) {
+        DatabaseHandler dbh = new DatabaseHandler();
+        List<Article> articles = dbh.fetchArticles();
+        int count = 0;
+        for(Article article: articles){
+            String predCategory = categorizeArticles(article.getTitle()+" "+article.getContent());
+            assert predCategory != null;
+            if(article.getCategory().toString().equals(predCategory.toUpperCase())){
+                count++;
+            }
+        }
+        double accuracy = (double) (count * 100) /articles.size();
+        System.out.println("Accuracy: "+accuracy);
     }
 }

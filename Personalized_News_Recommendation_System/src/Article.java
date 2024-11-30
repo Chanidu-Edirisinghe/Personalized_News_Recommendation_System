@@ -5,7 +5,7 @@ public class Article {
     private String title;
     private String content;
     private Category category;
-    private List<Keyword> keywords = new ArrayList<>();
+
 
     public Article(int articleID, String title, String content, Category category){
         this.articleID = articleID;

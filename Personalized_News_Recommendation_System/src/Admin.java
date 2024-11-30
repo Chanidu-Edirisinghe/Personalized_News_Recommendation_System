@@ -12,12 +12,7 @@ public class Admin extends SystemUser{
     }
 
     public void deactivateUserProfile(int user_id){
-        if(dbh.addDeletedUserID(user_id)){
-            dbh.removeUser(user_id);
-        }
-        else{
-            System.out.println("Error in deleting user.");
-        }
+        dbh.removeUser(user_id);
     }
 
     public void addArticle(){
@@ -30,12 +25,7 @@ public class Admin extends SystemUser{
     }
 
     public void deleteArticle(int article_id){
-        if(dbh.addDeletedArticleID(article_id)){
-            dbh.removeDeletedArticle(article_id);
-        }
-        else{
-            System.out.println("Error in deleting article.");
-        }
+        dbh.removeDeletedArticle(article_id);
     }
 
     public void resetPassword(int user_id){

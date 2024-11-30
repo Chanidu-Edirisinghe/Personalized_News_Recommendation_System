@@ -7,6 +7,14 @@ public class Interaction {
     private String interactionType; // e.g., "Read", "Like", "Skip"
     private LocalDate interactionDate;
 
+    public Interaction(int interaction_id, User user, Article article, String interactionType, LocalDate date){
+        this.interaction_id = interaction_id;
+        this.interactionDate = date;
+        this.interactionType = interactionType;
+        this.user = user;
+        this.article = article;
+    }
+
     public int getInteraction_id() {
         return interaction_id;
     }

@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Driver {
     private static final DatabaseHandler dbHandler = new DatabaseHandler();
@@ -15,6 +16,10 @@ public class Driver {
 
     // Fixed methods
 
+    private static boolean notAlphabeticName(String name) {
+        // Check if the name matches only alphabetic letters
+        return !name.matches("[a-zA-Z]+");
+    }
     private static int validateID(String idName) {
         int id;
         while (true) {
@@ -37,23 +42,31 @@ public class Driver {
     private static void handleUserInteraction(User user, Article article) {
         // 'Read', 'Like', 'Skip'
         user.recordInteraction(user, article, "Read");
-        System.out.println("1. Do you like this article.");
-        System.out.println("2. Do you want to skip this article.");
-        System.out.print("Enter your choice (1, 2): ");
-        String choice = scanner.nextLine().trim(); // validation
-        switch (choice){
-            case "1":
-                user.recordInteraction(user, article, "Like");
-            case "2":
-                user.recordInteraction(user, article, "Skip");
-            default:
-                System.out.println("Invalid choice. Please try again.");
+        while(true) {
+            System.out.println("1. Do you like this article.");
+            System.out.println("2. Do you want to skip this article.");
+            System.out.println("3. Exit article.");
+            System.out.print("Enter your choice (1, 2, 3): ");
+            String choice = scanner.nextLine().trim(); // validation
+            switch (choice) {
+                case "1":
+                    user.recordInteraction(user, article, "Like");
+                    break;
+                case "2":
+                    user.recordInteraction(user, article, "Skip");
+                    break;
+                case "3":
+                    System.out.println("Exiting...");
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
         }
     }
     private static List<String> handleLogin() {
         System.out.println("Login selected.");
-        String username = validateUsername();
-        String password = validatePassword();
+        String username = validateUsername(false);
+        String password = validatePassword(false);
 
         // check if login details are in the DB
         if (dbHandler.login(username, password)) {
@@ -82,11 +95,13 @@ public class Driver {
                     handleProfileUpdate(user);
                     break;
                 case "2": // View articles
-                    Article currentArticle = handleDisplayArticles(user);
+                    Article currentArticle = handleDisplayArticles(user, dbHandler.fetchArticles());
                     handleUserInteraction(user, currentArticle);
                     break;
                 case "3": // Get recommendations
-                    user.getRecommendations(); // use method to print the articles gracefully
+                    List<Article> recommendedArticles = user.getRecommendations();
+                    Article currentRecArticle = handleDisplayArticles(user, recommendedArticles);
+                    handleUserInteraction(user, currentRecArticle);
                     break;
                 case "4": // Exit to main menu/Logout
                     System.out.println("Logging out...");
@@ -99,28 +114,40 @@ public class Driver {
             }
         }
     } // adjust if needed
-    private static String validateUsername(){
+    private static String validateUsername(boolean update) {
         String username;
         while (true) {
             System.out.print("Enter username: ");
             username = scanner.nextLine().trim();
+
+            if(update && username.isEmpty()){
+                return null;
+            }
+
             if (username.length() < 6) {
                 System.out.println("Username must be at least 6 characters long. Please try again.");
                 continue;
             }
-            if (!dbHandler.checkUsernameAvailability(username)) {
-                System.out.println("Username is already taken. Please choose another.");
+
+            if (!username.matches("[a-zA-Z0-9]+")) {
+                System.out.println("Username must only contain alphanumeric characters. Please try again.");
                 continue;
             }
-            break;
+
+            break; // If all checks pass, exit the loop
         }
         return username;
     }
-    private static String validatePassword(){
+    private static String validatePassword(boolean update){
         String password;
         while (true) {
             System.out.print("Enter password: ");
-            password = scanner.nextLine();
+            password = scanner.nextLine().trim();
+
+            if(update && password.isEmpty()){
+                return null;
+            }
+
             if (password.length() < 6) {
                 System.out.println("Password must be at least 6 characters long. Please try again.");
             } else {
@@ -134,29 +161,33 @@ public class Driver {
         while (true) {
             System.out.print("Enter " + fieldName + ": ");
             name = scanner.nextLine().trim();
+
+            // Check if name is empty
             if (name.isEmpty()) {
                 System.out.println(fieldName + " cannot be empty. Please try again.");
-            } else {
-                break;
+                continue;
             }
+
+            // Check if the name is alphabetic
+            if (notAlphabeticName(name)) {
+                System.out.println(fieldName + " must only contain alphabetic characters. Please try again.");
+                continue;
+            }
+
+            break; // If all checks pass, exit the loop
         }
         return name;
     }
     private static void handlePwReset(Admin admin){
         System.out.println("Password reset selected.\n");
-        System.out.print("Please choose a user ID: ");
-        String userID = scanner.nextLine().trim();
-        int user_id = validateID(userID);
+        int user_id = validateID("user ID");
         admin.resetPassword(user_id);
     }
     private static void handleUserDeactivation(Admin admin){
         System.out.println("Deactivate user selected.");
-        System.out.print("Please choose a user ID: ");
-        String userID = scanner.nextLine().trim();
-        int user_id = validateID(userID);
-        System.out.print("Enter user ID to reconfirm deletion: ");
-        String re_userID = scanner.nextLine().trim();
-        int re_user_id = validateID(re_userID);
+        int user_id = validateID("user ID");
+        System.out.println("Enter user ID to reconfirm deletion.");
+        int re_user_id = validateID("user ID");
         if(user_id == re_user_id){
             admin.deactivateUserProfile(user_id);
         }
@@ -252,6 +283,7 @@ public class Driver {
                     break;
                 case "2":
                     System.out.println("External DB selected");
+                    ArticleFetcher.fetchFromDB();
                     break;
                 case "3":
                     System.out.println("Exiting menu...");
@@ -331,91 +363,107 @@ public class Driver {
         System.out.println("\nProfile Update selected.\n");
 
         // Collect new details from the user
-        System.out.print("Enter new username (leave blank to keep current): ");
-        String username = scanner.nextLine().trim();
-        if (username.isEmpty()) {
-            username = currentUser.getUsername();
-        } else if (!dbHandler.checkUsernameAvailability(username)) {
-            System.out.println("Username is already taken. Keeping current username.");
-            username = currentUser.getUsername();
+        System.out.println("Enter new username (leave blank to keep current).");
+        String username;
+        while (true) {
+            username = validateUsername(true);
+            if(username == null){
+                username = currentUser.getUsername();
+                break;
+            }
+            if (!dbHandler.checkUsernameAvailability(username) && !Objects.equals(currentUser.getUsername(), username)) {
+                System.out.println("Username is already taken. Please choose another.");
+                continue;
+            }
+            break;
         }
 
-        System.out.print("Enter new password (leave blank to keep current): ");
-        String password = scanner.nextLine().trim();
-        if (password.isEmpty()) {
+
+        System.out.println("Enter new password (leave blank to keep current): ");
+        String password;
+        password = validatePassword(true);
+        if (password == null) {
             password = currentUser.getPassword(); // Keep the current password
         }
 
-        System.out.print("Enter new first name (leave blank to keep current): ");
-        String firstName = scanner.nextLine().trim();
-        if (firstName.isEmpty()) {
-            firstName = currentUser.getFirstName();
+
+        System.out.println("Enter new first name (leave blank to keep current).");
+        String firstName;
+        while(true) {
+            firstName = scanner.nextLine().trim();
+            if (firstName.isEmpty()) {
+                firstName = currentUser.getFirstName();
+                break;
+            }
+            else if(notAlphabeticName(firstName)) {
+                System.out.print("Enter valid first name: ");
+            }
         }
 
-        System.out.print("Enter new last name (leave blank to keep current): ");
-        String lastName = scanner.nextLine().trim();
-        if (lastName.isEmpty()) {
-            lastName = currentUser.getLastName();
+        System.out.println("Enter new last name (leave blank to keep current).");
+        String lastName;
+        while(true) {
+            lastName = scanner.nextLine().trim();
+            if (lastName.isEmpty()) {
+                lastName = currentUser.getLastName();
+                break;
+            }
+            else if(notAlphabeticName(lastName)) {
+                System.out.print("Enter valid last name: ");
+            }
         }
 
         // Update user details
         currentUser.updateDetails(username, password, firstName, lastName);
 
+        // update Preferences
+        handlePreferenceUpdate(currentUser, true);
+
         System.out.println("\nProfile updated successfully!\n");
     }
-    private static Article handleDisplayArticles(User user) {
+    private static Article handleDisplayArticles(User user, List<Article> articles) {
+        user.viewArticles(articles);
 
-        List<Article> articles = user.viewArticles();
+        int article_id;
+        Set<Integer> articleIds = articles.stream()
+                .map(Article::getArticleID) // Assuming Article has a getId() method
+                .collect(Collectors.toSet()); // Collect all article IDs into a set for quick lookup
 
-        System.out.println("Please choose an option:");
-        System.out.println("1. Select article to read");
-        System.out.println("2. Filter articles by category");  // optional
-        System.out.print("Enter your choice (1, 2): ");
-
-        String choice = scanner.nextLine().trim();
-        switch (choice) {
-            case "1":
-                int article_id = validateID("article ID");
-
-                // Search for the article with the matching ID
-                Article matchedArticle = null;
-                for (Article article : articles) {
-                    if (article.getArticleID() == article_id) {
-                        matchedArticle = article;
-                        break;
-                    }
-                }
-
-                // If an article is found, display it; otherwise, print an error message
-                if (matchedArticle != null) {
-                    matchedArticle.displayArticle();
-                    return matchedArticle;
-                } else {
-                    System.out.println("No article found with the given ID.");
-                    return  null;
-                }
-            case "2":
-                // filter the articles and display to user
-                // ask for article id to view
-                break;
-            default:
-                System.out.println("Invalid choice. Please try again.");
+        while (true) {
+            article_id = validateID("article ID"); // Validate user input
+            if (!articleIds.contains(article_id)) { // Check if the ID exists in the articles list
+                System.out.println("This article ID is not valid. Please try again.");
+            } else {
+                break; // Exit loop if a valid ID is entered
+            }
         }
-        return null;
+        // Search for the article with the matching ID
+        Article matchedArticle = null;
+        for (Article article : articles) {
+            if (article.getArticleID() == article_id) {
+                matchedArticle = article;
+                break;
+            }
+        }
+
+        // If an article is found, display it; otherwise, print an error message
+        if (matchedArticle != null) {
+            matchedArticle.displayArticle();
+            return matchedArticle;
+        } else {
+            System.out.println("No article found with the given ID.");
+            return  null;
+        }
     }
     private static void handleDeleteArticle(Admin admin){
-        admin.viewArticles();
-        System.out.print("\nEnter article ID: ");
-        String articleID = scanner.nextLine().trim();
-        int article_id = validateID(articleID);
+        admin.viewArticles(dbHandler.fetchArticles());
+        int article_id = validateID("article ID");
         admin.deleteArticle(article_id);
     }
     private static void handleEditArticle(Admin admin) {
-        List<Article> articles = admin.viewArticles();
-        System.out.print("\nEnter article ID: ");
-        String articleID = scanner.nextLine();
-
-        int article_id = validateID(articleID);
+        List<Article> articles = dbHandler.fetchArticles();
+        admin.viewArticles(articles);
+        int article_id = validateID("article ID");
         Article selectedArticle = null;
         for (Article article : articles) {
             if (article.getArticleID() == article_id) {
@@ -450,23 +498,81 @@ public class Driver {
         admin.editArticle(selectedArticle);
         System.out.println("Article updated successfully!");
     }
+    private static void handlePreferenceUpdate(User user, boolean preferenceAdded){
+        System.out.println("Choose categories you are interested in.");
+        Category[] categories = Category.values();
 
+        // Display available categories
+        for (int i = 0; i < categories.length - 1; i++) {
+            System.out.println((i + 1) + ". " + categories[i]);
+        }
 
+        System.out.println("\nEnter category numbers one by one. Enter 'x' to stop.");
+        System.out.println("Example: Enter 1 to select CULTURE.");
 
-    // To be fixed methods( fix category input issue)
+        // Initialize a set to avoid duplicate inputs
+        Set<Integer> selectedCategories = new HashSet<>();
 
+        while (true) {
+            System.out.print("\nEnter number: ");
+            String input = scanner.nextLine().trim();
 
+            if (input.equalsIgnoreCase("x")) {
+                break;
+            }
+
+            try {
+                int categoryNumber = Integer.parseInt(input);
+
+                if (categoryNumber < 1 || categoryNumber > categories.length - 1) {
+                    System.out.println("Invalid number. Please enter a number between 1 and " + (categories.length - 1) + ".");
+                } else if (selectedCategories.contains(categoryNumber)) {
+                    System.out.println("You have already selected this category. Choose a different one.");
+                } else {
+                    selectedCategories.add(categoryNumber);
+                    System.out.println(categories[categoryNumber - 1] + " added to your preferences.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid number or 'x' to stop.");
+            }
+        }
+
+        // Convert selected category numbers to preferences
+        if(!preferenceAdded) {
+            for (int i = 0; i < categories.length - 1; i++) {
+                user.addPreference(new Preference(categories[i], 0), true); // Initialize all categories with a default interest level of 0
+            }
+        }
+        else{
+            for (int i = 0; i < categories.length - 1; i++) {
+                user.addPreference(new Preference(categories[i], 0), false); // Initialize all categories with a default interest level of 0
+                user.updatePreferences(i, 0);
+            }
+        }
+
+        for (int categoryNumber : selectedCategories) {
+            user.updatePreferences(categoryNumber - 1, 5); // Update selected categories with interest level
+        }
+    }
     private static User handleRegister() {
         System.out.println("Registration selected.");
 
         // Validate username input
-        String username = validateUsername();
+        String username;
+        while (true) {
+            username = validateUsername(false);
+            if (!dbHandler.checkUsernameAvailability(username)) {
+                System.out.println("Username is already taken. Please choose another.");
+                continue;
+            }
+            break;
+        }
         // Validate password input
-        String password = validatePassword();
+        String password = validatePassword(false);
         // Validate first name input
-        String firstName = validateName("First name");
+        String firstName = validateName("first name");
         // Validate last name input
-        String lastName = validateName("Last name");
+        String lastName = validateName("last name");
 
         // Attempt to register the user
         int userId = dbHandler.register(username, password, firstName, lastName);
@@ -484,34 +590,8 @@ public class Driver {
                     LocalDate.parse(userDetails.get(5))
             );
 
-            // Get initial preferences from user
-            System.out.println("Choose categories you are interested in.");
-            for(int i = 0; i < Category.values().length - 1; i++){
-                System.out.println((i+1) +". "+ Category.values()[i]);
-            }
-            System.out.println("Enter category numbers one by one. Enter x to stop.");
-            System.out.println("Example: Enter 1 to select CULTURE.");
-            List<String> catNums = new ArrayList<>();
-            while(true){
-                System.out.print("\nEnter number: "); // add validation
-                String number = scanner.nextLine().trim();
-                if(number.equalsIgnoreCase("x")){
-                    break;
-                }
-                catNums.add(number);
-            }
-
-            // set initial preferences for user
-            Category[] categories = Category.values();
-            for (int i = 0; i < categories.length - 1; i++) {
-                user.addPreference(new Preference(categories[i], 0));
-            }
-
-            // update preferences based on input
-            for(String catNum:catNums){
-                user.updatePreferences(Integer.parseInt(catNum)-1, 5);
-            }
-
+            handlePreferenceUpdate(user, false);
+            System.out.println("\nPreferences updated successfully!");
             System.out.println("Registration successful! Welcome, " + user.getFirstName() + "!");
             return user;
         } else {
@@ -519,5 +599,4 @@ public class Driver {
             return null;
         }
     }
-
 }

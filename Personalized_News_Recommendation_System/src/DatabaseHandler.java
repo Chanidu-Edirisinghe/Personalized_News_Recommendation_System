@@ -320,7 +320,7 @@ public class DatabaseHandler {
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
 
-            pst.setString(1, category.toString()); // Set the category parameter
+            pst.setString(1, category.toString().toUpperCase()); // Set the category parameter
             ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {
@@ -396,7 +396,7 @@ public class DatabaseHandler {
             }
         }
         catch(SQLException e){
-            e.printStackTrace();
+            System.out.println("DB ISSUE");
         }
         return false;
     }

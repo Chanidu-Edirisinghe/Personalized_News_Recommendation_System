@@ -13,9 +13,11 @@ public class User extends SystemUser{
         super(user_id, username, password, firstname, lastname, regDate, Role.USER);
     }
 
-    public void addPreference(Preference preference){
+    public void addPreference(Preference preference, boolean notAdded){
         preferences.add(preference);
-        dbh.savePreference(this.getUserID(), preference);
+        if(notAdded) {
+            dbh.savePreference(this.getUserID(), preference);
+        }
     }
 
     public void updatePreferences(int prefNumber, int interest_level){

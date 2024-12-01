@@ -1,11 +1,9 @@
-import java.util.Scanner;
 
 public class ArticleFetcher {
-    public void fetchFromFile(){
 
-    }
-
-    public void fetchFromDB(){
-
+    public static void fetchFromDB(){
+        // fetch articles from an external DB
+        // categorize then using article categorizer
+        // add to native db
     }
 }

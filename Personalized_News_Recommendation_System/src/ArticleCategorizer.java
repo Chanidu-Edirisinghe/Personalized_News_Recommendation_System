@@ -3,57 +3,97 @@ import java.util.*;
 
 public class ArticleCategorizer {
 
-    private static final String[] culture_keywords = {"ancient", "art", "cultural", "culture", "global",
-            "heritage", "identity", "language", "modern", "practices", "tourism",
-            "traditional", "traditions", "values", "world"
+    private static final String[] culture_keywords = {"ancient", "architecture", "art", "blending",
+            "cultural", "culture", "cultures", "design", "digital", "diversity", "essential", "fashion",
+            "festivals", "forms", "fostering", "global", "globalized", "heritage", "history", "hollywood",
+            "identity", "impact", "importance", "increasingly", "influence", "influences", "language",
+            "languages", "local", "media", "modern", "music", "practices", "preservation", "preserve",
+            "reflection", "religion", "role", "shape", "shaping", "social", "sports", "tourism", "traditional",
+            "traditions", "trends", "understanding", "unique", "values", "world"
     };
 
     private static final String[] education_keywords = {
-            "challenges", "classrooms", "digital", "education", "educational",
-            "financial", "future", "learning", "platforms", "schools", "students",
-            "teachers", "technology", "world"
+            "ai", "challenges", "classrooms", "continue", "continues", "curricula", "demand", "digital",
+            "edtech", "education", "educational", "emotional", "enhance", "ensure", "eq", "essential",
+            "experience", "experiences", "financial", "flexible", "future", "health", "helping", "higher",
+            "homeschooling", "importance", "increasingly", "international", "learning", "like", "make",
+            "media", "mental", "online", "personalized", "platforms", "providing", "rise", "schools",
+            "social", "startups", "stem", "student", "students", "teachers", "technology", "tools",
+            "universities", "way", "world"
     };
 
     private static final String[] entertainment_keywords = {
-            "anime", "art", "audiences", "fans", "industry", "mobile", "new", "platforms",
-            "popularity", "production", "series", "shows", "streaming", "viewers", "virtual"
+            "anime", "art", "artists", "audiences", "changes", "classic", "concerts", "content",
+            "creative", "digital", "diverse", "enjoying", "entertainment", "events", "experiences",
+            "fans", "fashion", "festivals", "film", "films", "gaming", "genres", "high", "immersive",
+            "increasingly", "independent", "industry", "interactive", "issues", "live", "major", "mobile",
+            "music", "new", "offer", "performances", "platforms", "popular", "popularity", "possibilities",
+            "production", "reality", "series", "shows", "specials", "storytelling", "streaming",
+            "tv", "viewers", "virtual"
     };
 
     private static final String[] health_keywords = {
-            "air", "disease", "diseases", "exercise", "experts", "health", "heart",
-            "importance", "improve", "like", "mental", "physical", "quality", "risk",
-            "stress"
+            "access", "activity", "air", "balanced", "better", "cancer", "crucial", "diet", "disease", "diseases",
+            "exercise", "experts", "foods", "gut", "health", "healthcare", "heart", "help", "hydration", "importance",
+            "improve", "leading", "like", "long", "making", "mental", "mood", "new", "outcomes", "overall", "physical",
+            "preventive", "quality", "recommend", "reduce", "reducing", "regular", "research", "risk", "role",
+            "screenings", "shown", "sleep", "smoking", "stress", "studies", "telemedicine", "term", "treatment",
+            "vaccines"
     };
 
     private static final String[] history_keywords = {
-            "century", "empire", "end", "europe", "history", "impact", "including", "led",
-            "modern", "political", "revolution", "role", "roman", "war", "world"
+            "age", "ancient", "art", "century", "civilization", "cultural", "death", "development",
+            "economic", "egypt", "empire", "end", "europe", "exploration", "fall", "fought", "french",
+            "global", "history", "impact", "including", "influence", "led", "like", "marked", "modern",
+            "napoleon", "new", "period", "played", "political", "press", "printing", "profound", "revolution",
+            "rise", "road", "role", "roles", "roman", "silk", "slavery", "spread",
+            "states", "systems", "trade", "united", "war", "women", "world"
     };
 
     private static final String[] politics_keywords = {
-            "address", "argue", "budget", "climate", "debate", "economic", "energy",
-            "funding", "healthcare", "housing", "incentives", "lawmakers", "policies",
-            "reform", "tax"
+            "address", "advocates", "aim", "argue", "balancing", "budget", "changes", "climate", "continues",
+            "criminal", "crisis", "critics", "debate", "defense", "discussions", "economic", "education",
+            "energy", "fiscal", "funding", "healthcare", "housing", "incentives", "increased", "justice",
+            "labor", "lawmakers", "laws", "leaders", "national", "new", "opponents", "policies", "policy",
+            "potential", "programs", "proponents", "proposals", "public", "recent", "reduce",
+            "reform", "reforms", "remains", "renewable", "say", "security", "spending", "support", "tax"
     };
 
     private static final String[] science_keywords = {
-            "artificial", "change", "climate", "data", "energy", "genetic", "life", "like",
-            "medicine", "potential", "renewable", "science", "space", "technology", "used"
+            "3d", "accessible", "artificial", "challenges", "change", "climate", "computers", "conservation",
+            "continues", "create", "crispr", "data", "editing", "efficient", "enabling", "energy", "fuels",
+            "future", "gene", "genetic", "healthcare", "human", "improve", "industries", "life", "like", "make",
+            "manufacturing", "medicine", "new", "personalized", "photosynthesis", "potential", "printing", "promise",
+            "providing", "quantum", "remain", "renewable", "researchers", "role", "science", "scientific", "scientists",
+            "smart", "sources", "space", "technology", "tourism", "used"
     };
 
     private static final String[] sport_keywords = {
-            "analysts", "fans", "game", "high", "league", "match", "player", "players",
-            "record", "season", "sport", "team", "teams", "victory", "win"
+            "analysts", "calling", "championship", "coach", "decision", "eagerly", "fans", "field", "filled",
+            "final", "game", "games", "high", "historic", "hopeful", "impressive", "incredible", "known",
+            "latest", "league", "left", "long", "looking", "major", "match", "moments", "national", "new",
+            "opponent", "performance", "performances", "player", "players", "plays", "record", "season",
+            "secure", "skill", "sport", "sports", "star", "stunning", "team", "teams",
+            "teamâ", "trade", "underdog", "victory", "win", "young"
     };
 
     private static final String[] technology_keywords = {
-            "ai", "applications", "companies", "data", "devices", "energy", "experts",
-            "health", "industries", "like", "making", "new", "security", "smart", "technology"
+            "5g", "advancements", "advances", "ai", "applications", "assistants", "battery",
+            "blockchain", "breakthrough", "businesses", "capable", "companies", "complex",
+            "computing", "concerns", "cybersecurity", "data", "devices", "energy", "experts",
+            "exploration", "health", "industries", "innovation", "innovations", "investing", "language",
+            "like", "making", "new", "offering", "privacy", "private", "provide", "quantum", "reality",
+            "remain", "renewable", "researchers", "rpa", "safety", "security",
+            "significant", "smart", "solutions", "space", "tasks", "technologies", "technology", "work"
     };
 
     private static final String[] weather_keywords = {
-            "air", "atmosphere", "climate", "clouds", "currents", "cycle", "earth", "global",
-            "leading", "niña", "patterns", "rainfall", "temperatures", "water", "weather"
+            "ai", "air", "atmosphere", "carbon", "change", "changes", "climate", "cloud", "clouds",
+            "creating", "currents", "cycle", "deforestation", "earth", "effect", "effects", "el",
+            "events", "extreme", "form", "gases", "global", "greenhouse", "heat", "impact", "leading",
+            "lightning", "like", "meteor", "meteorologists", "niã", "occurs", "ocean", "patterns", "play",
+            "pollution", "precipitation", "rainfall", "role", "significant", "storm", "storms",
+            "temperatures", "thunder", "tornadoes", "vapor", "warm", "warming", "water", "weather"
     };
 
 

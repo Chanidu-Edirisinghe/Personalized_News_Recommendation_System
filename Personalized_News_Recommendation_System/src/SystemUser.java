@@ -53,17 +53,14 @@ public class SystemUser {
         System.out.println("______________________________________________________");
     }
 
-    public List<Article> viewArticles(){
+    public void viewArticles(List<Article> articles){
         System.out.println("\nView Articles selected.\n");
-        DatabaseHandler dbHandler = new DatabaseHandler();
-        List<Article> articles = dbHandler.fetchArticles();
         List<String> headers = Arrays.asList("article_id", "title", "category");
         printTable(articles, headers, article -> Arrays.asList(
                 String.valueOf(article.getArticleID()),
                 article.getTitle(),
                 article.getCategory().toString()
         ));
-        return articles;
     }
 
     public static <T> void printTable(List<T> data, List<String> headers, Function<T, List<String>> rowMapper) {

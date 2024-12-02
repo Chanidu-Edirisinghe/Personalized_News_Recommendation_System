@@ -1,6 +1,11 @@
 public class Preference {
     private Category category;
-    private int interestLevel;
+    private int interestLevel;//(0 to 100)
+
+    public Preference(Category category, int interestLevel){
+        this.category = category;
+        this.interestLevel = interestLevel;
+    }
 
     public Category getCategory() {
         return category;

@@ -1,10 +1,11 @@
 import java.util.ArrayList;
 import java.util.List;
 public class Article {
-    private int articleID;
+    private final int articleID;
     private String title;
     private String content;
     private Category category;
+    private List<Interaction> interactions = new ArrayList<>();
 
 
     public Article(int articleID, String title, String content, Category category){
@@ -31,13 +32,13 @@ public class Article {
     }
 
     // Helper method to center-align text
-    private String centerText(String text, int width) {
+    private static String centerText(String text, int width) {
         int padding = (width - text.length()) / 2;
         return " ".repeat(Math.max(0, padding)) + text;
     }
 
     // Helper method to wrap text
-    private String wrapText(String text, int width) {
+    private static String wrapText(String text, int width) {
         StringBuilder wrappedText = new StringBuilder();
         int start = 0;
 
@@ -48,39 +49,33 @@ public class Article {
         }
         return wrappedText.toString().trim(); // Remove trailing newline
     }
-
-
-
     public String getTitle() {
         return title;
     }
-
     public Category getCategory() {
         return category;
     }
-
     public int getArticleID() {
         return articleID;
     }
-
     public String getContent() {
         return content;
     }
-
     public void setCategory(Category category) {
         this.category = category;
     }
-
     public void setTitle(String title) {
         this.title = title;
     }
-
-    public void setArticleID(int articleID) {
-        this.articleID = articleID;
-    }
-
     public void setContent(String content) {
         this.content = content;
     }
 
+    public List<Interaction> getInteractions() {
+        return interactions;
+    }
+
+    public void setInteractions(List<Interaction> interactions) {
+        this.interactions = interactions;
+    }
 }

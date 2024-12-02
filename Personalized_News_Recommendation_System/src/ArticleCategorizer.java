@@ -163,6 +163,8 @@ public class ArticleCategorizer {
         return count;
     }
 
+
+    // check accuracy
     public static void main(String[] args) {
         DatabaseHandler dbh = new DatabaseHandler();
         List<Article> articles = dbh.fetchArticles();

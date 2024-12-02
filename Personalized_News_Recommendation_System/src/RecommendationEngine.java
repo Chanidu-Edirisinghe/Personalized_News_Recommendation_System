@@ -3,7 +3,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class RecommendationEngine {
-    public List<Article> generateRecommendations(User user) {
+    public static List<Article> generateRecommendations(User user) {
 
         DatabaseHandler db = new DatabaseHandler();
         // Step 1: Update user preferences
@@ -40,7 +40,7 @@ public class RecommendationEngine {
         return recommendedArticles; // Return the final list of recommendations
     }
 
-    public void updatePreferences(User user) {
+    public static void updatePreferences(User user) {
         DatabaseHandler db = new DatabaseHandler();
         LocalDate today = LocalDate.now();
 
@@ -82,22 +82,33 @@ public class RecommendationEngine {
         for (Preference preference : preferences) {
             if (categoryUpdates.containsKey(String.valueOf(preference.getCategory()))) {
                 int updatedLevel = preference.getInterestLevel() + categoryUpdates.get(String.valueOf(preference.getCategory()));
-                preference.setInterestLevel(Math.min(100, Math.max(0, updatedLevel))); // Clamp within 0 to 100
+                preference.setInterestLevel(updatedLevel); // Clamp within 0 to 100
             }
         }
 
-        // Step 6: Check total interest level across all categories
-        int totalInterest = preferences.stream()
+        // Step 5.1: Find min and max interest levels
+        int minLevel = preferences.stream()
                 .mapToInt(Preference::getInterestLevel)
-                .sum();
+                .min()
+                .orElse(0);
 
-        // Step 7: Normalize categories proportionally if total interest exceeds maximum allowed (e.g., 10 * 100 = 1000)
-        int maxTotal = preferences.size() * 100; // 10 categories * 100 max per category = 1000
-        if (totalInterest > maxTotal) {
-            double scale = (double) maxTotal / totalInterest; // Calculate scaling factor
+        int maxLevel = preferences.stream()
+                .mapToInt(Preference::getInterestLevel)
+                .max()
+                .orElse(100);
+
+        // Step 5.2: Normalize interest levels to fit between 0 and 100
+        if (minLevel != maxLevel) {
             for (Preference preference : preferences) {
-                int normalizedLevel = (int) Math.round(preference.getInterestLevel() * scale);
-                preference.setInterestLevel(normalizedLevel); // Adjust interest level proportionally
+                int normalizedLevel = (int) Math.round(
+                        ((double) (preference.getInterestLevel() - minLevel) * 100) / (maxLevel - minLevel)
+                );
+                preference.setInterestLevel(normalizedLevel);
+            }
+        } else {
+            // If all levels are the same, set all to 50
+            for (Preference preference : preferences) {
+                preference.setInterestLevel(50);
             }
         }
 

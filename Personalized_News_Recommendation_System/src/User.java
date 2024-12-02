@@ -1,13 +1,11 @@
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class User extends SystemUser{
     private List<Preference> preferences = new ArrayList<>();
     private List<Interaction> interactions = new ArrayList<>();
-
-    private DatabaseHandler dbh = new DatabaseHandler();
+    private final DatabaseHandler dbh = new DatabaseHandler();
 
     public User(int user_id, String username, String password, String firstname, String lastname, LocalDate regDate) {
         super(user_id, username, password, firstname, lastname, regDate, Role.USER);
@@ -32,16 +30,7 @@ public class User extends SystemUser{
     }
 
     public List<Article> getRecommendations(){
-        RecommendationEngine re = new RecommendationEngine();
-        return re.generateRecommendations(this);
-    }
-
-    public void viewPreferences(){
-        System.out.println(preferences);
-    }
-
-    public void viewFilteredArticles(Category category){
-        System.out.println(dbh.fetchFilteredArticles(category));
+        return RecommendationEngine.generateRecommendations(this);
     }
 
     public void updateDetails(String username, String password, String firstName, String lastName){
@@ -52,4 +41,19 @@ public class User extends SystemUser{
         dbh.updateUserDetails(this);
     }
 
+    public List<Interaction> getInteractions() {
+        return interactions;
+    }
+
+    public List<Preference> getPreferences() {
+        return preferences;
+    }
+
+    public void setInteractions(List<Interaction> interactions) {
+        this.interactions = interactions;
+    }
+
+    public void setPreferences(List<Preference> preferences) {
+        this.preferences = preferences;
+    }
 }

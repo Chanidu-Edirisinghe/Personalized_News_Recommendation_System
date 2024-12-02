@@ -5,7 +5,7 @@ import java.util.Random;
 
 public class Admin extends SystemUser{
 
-    private DatabaseHandler dbh = new DatabaseHandler();
+    private final DatabaseHandler dbh = new DatabaseHandler();
 
     public Admin(int user_id, String username, String password, String firstName, String lastName, LocalDate regDate){
         super(user_id, username, password, firstName, lastName, regDate, Role.ADMIN);
@@ -15,9 +15,8 @@ public class Admin extends SystemUser{
         dbh.removeUser(user_id);
     }
 
-    public void addArticle(){
-        // call methods in article fetcher
-
+    public Article addArticle(String title, String content, Category category){
+        return dbh.saveNewArticle(title, content, category);
     }
 
     public void editArticle(Article article){

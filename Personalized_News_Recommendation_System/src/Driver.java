@@ -1,10 +1,13 @@
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class Driver {
     private static final DatabaseHandler dbHandler = new DatabaseHandler();
     private static final Scanner scanner = new Scanner(System.in);
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(10); // Allow up to 10 concurrent users
     public static void main(String[] args) {
         while (true) {
             boolean condition = handleMainMenu(); // Display the main menu
@@ -12,6 +15,7 @@ public class Driver {
                 break;
             }
         }
+        executorService.shutdown();
     }
 
     // Fixed methods
@@ -229,19 +233,21 @@ public class Driver {
         String choice = scanner.nextLine().trim();
         switch (choice) {
             case "1":
-                List<String> userDetails = handleLogin(); // Call the login flow
-                // go to main flow only if the user is registered in the system.
-                if(userDetails != null) {
-                    // check if a user logged in
-                    if(userDetails.getLast().equals("USER")) {
-                        User user = createUser(userDetails);
-                        handleUserMenu(user);
+                // Submit the login task to the executor for concurrent execution
+                executorService.submit(() -> {
+                    List<String> userDetails = handleLogin(); // Call the login flow
+                    // go to main flow only if the user is registered in the system.
+                    if (userDetails != null) {
+                        // check if a user logged in
+                        if (userDetails.getLast().equals("USER")) {
+                            User user = createUser(userDetails);
+                            handleUserMenu(user);
+                        } else { // admin
+                            Admin admin = createAdmin(userDetails);
+                            handleAdminMenu(admin);
+                        }
                     }
-                    else{ // admin
-                        Admin admin = createAdmin(userDetails);
-                        handleAdminMenu(admin);
-                    }
-                }
+                });
                 break;
 
             case "2":
@@ -269,30 +275,19 @@ public class Driver {
         return new Admin(Integer.parseInt(userDetails.get(0)), userDetails.get(1), userDetails.get(2), userDetails.get(3),
                 userDetails.get(4), LocalDate.parse(userDetails.get(5)));
     }
-    private static void handleAddArticle(){
-        while (true) {
-            System.out.println("Please choose an option:");
-            System.out.println("1. Add manually");
-            System.out.println("2. Add from external DB");
-            System.out.println("3. Go back");
-            System.out.print("Enter your choice (1, 2, 3): ");
-            String choice = scanner.nextLine();
-            switch (choice) {
-                case "1":
-                    handleManualAdd();
-                    break;
-                case "2":
-                    System.out.println("External DB selected");
-                    ArticleFetcher.fetchFromDB();
-                    break;
-                case "3":
-                    System.out.println("Exiting menu...");
-                    return;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-            }
+    private static void handleAddArticle(Admin admin){
+        System.out.println("Add selected\n");
+        System.out.print("Enter title: ");
+        String title = scanner.nextLine();
+        System.out.print("Enter content: ");
+        String content = scanner.nextLine();
+        System.out.println("Please wait a moment for the article to get categorized.");
+        String category = Objects.requireNonNull(ArticleCategorizer.categorizeArticles(title + " " + content)).toUpperCase();
+        Article article = admin.addArticle(title, content, Category.valueOf(category));
+        if(article != null){
+            System.out.println("Article added.");
         }
-    }  // check external DB part
+    }
     private static void handleManageArticles(Admin admin){
         while(true) {
             System.out.println("Please choose an option:");
@@ -305,7 +300,7 @@ public class Driver {
             switch (choice) {
                 case "1":
                     // add articles
-                    handleAddArticle();
+                    handleAddArticle(admin);
                     break;
                 case "2":
                     // edit article
@@ -347,18 +342,7 @@ public class Driver {
             }
         }
     }
-    private static void handleManualAdd() {
-        System.out.println("Manual selected\n");
-        System.out.print("Enter title: ");
-        String title = scanner.nextLine();
-        System.out.print("Enter content: ");
-        String content = scanner.nextLine();
-        String category = Objects.requireNonNull(ArticleCategorizer.categorizeArticles(title + " " + content)).toUpperCase();
-        Article article = dbHandler.saveNewArticle(title, content, Category.valueOf(category));
-        if(article != null){
-            System.out.println("Article added.");
-        }
-    } // fix if needed
+    // fix if needed
     private static void handleProfileUpdate(User currentUser) {
         System.out.println("\nProfile Update selected.\n");
 
@@ -551,7 +535,7 @@ public class Driver {
         }
 
         for (int categoryNumber : selectedCategories) {
-            user.updatePreferences(categoryNumber - 1, 5); // Update selected categories with interest level
+            user.updatePreferences(categoryNumber - 1, 50); // Update selected categories with interest level
         }
     }
     private static User handleRegister() {

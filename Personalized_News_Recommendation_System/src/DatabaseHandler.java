@@ -50,7 +50,7 @@ public class DatabaseHandler {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return -1; // Indicate failure
     }
@@ -65,7 +65,7 @@ public class DatabaseHandler {
             pst.executeUpdate();
         }
         catch (SQLException e){
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
     }
 
@@ -143,12 +143,12 @@ public class DatabaseHandler {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return null; // Return null in case of failure
     }
 
-    public boolean saveUpdatedArticle(Article article) {
+    public void saveUpdatedArticle(Article article) {
         String sql = "UPDATE Articles SET title = ?, content = ? WHERE article_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
@@ -157,20 +157,15 @@ public class DatabaseHandler {
             pst.setString(1, article.getTitle());
             pst.setString(2, article.getContent());
             pst.setInt(3, article.getArticleID());
+            pst.executeUpdate();
 
-            // Execute the update
-            int affectedRows = pst.executeUpdate();
-
-            // Return true if at least one row was updated
-            return affectedRows > 0;
         } catch (SQLException e) {
             System.out.println("Issue while connecting to the database.");
         }
-        return false; // Return false if an exception occurs or no rows are updated
     }
 
 
-    public boolean removeDeletedArticle(int article_id) {
+    public void removeDeletedArticle(int article_id) {
         String sql = "DELETE FROM Articles WHERE article_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
@@ -187,17 +182,13 @@ public class DatabaseHandler {
             int rowsAffected = pst.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("Article with ID " + article_id + " successfully deleted.");
-                return true;
             } else {
                 System.out.println("No article found with ID " + article_id);
-                return false;
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println("Error occurred while deleting the article: " + e.getMessage());
+            System.out.println("Issue while connecting to the database.");
         }
-        return false;
     }
 
 
@@ -213,7 +204,7 @@ public class DatabaseHandler {
                 return rs.getInt(1) == 0;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         // Return false in case of an error (indicates username is unavailable)
         return false;
@@ -268,7 +259,7 @@ public class DatabaseHandler {
                 userDetailsList.add(rs.getString("role"));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return userDetailsList; // Return the list of user details
     }
@@ -292,7 +283,7 @@ public class DatabaseHandler {
                 articleList.add(article);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return articleList;
     }
@@ -310,7 +301,7 @@ public class DatabaseHandler {
             pst.executeUpdate();
         }
         catch(SQLException e){
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
     }
 
@@ -333,7 +324,7 @@ public class DatabaseHandler {
                 articleList.add(article);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return articleList; // Return the list of Article objects
     }
@@ -349,7 +340,7 @@ public class DatabaseHandler {
             pst.executeUpdate();
         }
         catch (SQLException e){
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
     }
 
@@ -396,7 +387,7 @@ public class DatabaseHandler {
             }
         }
         catch(SQLException e){
-            System.out.println("DB ISSUE");
+            System.out.println("Issue while connecting to the database.");
         }
         return false;
     }
@@ -421,7 +412,7 @@ public class DatabaseHandler {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return interactions;
     }
@@ -442,7 +433,7 @@ public class DatabaseHandler {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return null;
     }
@@ -462,7 +453,7 @@ public class DatabaseHandler {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Issue while connecting to the database.");
         }
         return preferences;
     }

@@ -1,0 +1,3 @@
+In manageprofile  "handlePreferenceUpdate" method is same as the"handlePreferenceUpdate" in register.
+
+Make special mention about ref in sequence diagrams.

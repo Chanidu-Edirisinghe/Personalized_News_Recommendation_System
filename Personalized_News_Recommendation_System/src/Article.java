@@ -21,7 +21,6 @@ public class Article {
         int borderLength = Math.max(titleLength + 10, 120); // Minimum width of 40
 
         String border = "=".repeat(borderLength);
-        String separator = "-".repeat(borderLength);
 
         // Display the article details
         System.out.println(border + "\n");

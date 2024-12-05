@@ -33,6 +33,9 @@ public class Admin extends SystemUser{
         if(dbh.resetPassword(user_id, password)){
             System.out.println("New password is: "+password);
         }
+        else{
+            System.out.println("Issue with resetting password");
+        }
     }
 
     private static String generatePassword(){

@@ -13,6 +13,7 @@ public class DatabaseHandler {
         return DriverManager.getConnection(url);
     }
 
+    // Asynchronous
     public boolean login(String username, String password){
         String sql = "SELECT * FROM Users WHERE username = ? AND password = ?";
         try (Connection conn = getConnection();
@@ -311,7 +312,7 @@ public class DatabaseHandler {
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
 
-            pst.setString(1, category.toString().toUpperCase()); // Set the category parameter
+            pst.setString(1, category.toString().toLowerCase()); // Set the category parameter
             ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {
@@ -330,12 +331,12 @@ public class DatabaseHandler {
     }
 
 
-    public void updatePreference(int user_id, Preference preference){
+    public void updatePreference(Preference preference){
         String sql = "UPDATE Preferences SET interest_level = ? WHERE user_id = ? AND category = ?";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)){
             pst.setInt(1, preference.getInterestLevel());
-            pst.setInt(2, user_id);
+            pst.setInt(2, preference.getUser().getUserID());
             pst.setString(3, preference.getCategory().toString());
             pst.executeUpdate();
         }
@@ -417,11 +418,11 @@ public class DatabaseHandler {
         return interactions;
     }
 
-    public Article getArticleById(int articleId) {
+    public Article getArticleById(int article_id) {
         String query = "SELECT * FROM Articles WHERE article_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setInt(1, articleId);
+            pst.setInt(1, article_id);
             try (ResultSet rs = pst.executeQuery()) {
                 if (rs.next()) {
                     return new Article(
@@ -438,17 +439,17 @@ public class DatabaseHandler {
         return null;
     }
 
-    public List<Preference> getUserPreferences(int userId) {
+    public List<Preference> getUserPreferences(User user) {
         String query = "SELECT * FROM Preferences WHERE user_id = ?";
         List<Preference> preferences = new ArrayList<>();
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(query)) {
-            pst.setInt(1, userId);
+            pst.setInt(1, user.getUserID());
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     preferences.add(new Preference(
                             Category.valueOf(rs.getString("category").toUpperCase()),
-                            rs.getInt("interest_level")
+                            rs.getInt("interest_level"), user
                     ));
                 }
             }

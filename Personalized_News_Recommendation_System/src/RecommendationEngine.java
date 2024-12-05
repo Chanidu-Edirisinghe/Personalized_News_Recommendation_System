@@ -4,13 +4,12 @@ import java.util.*;
 
 public class RecommendationEngine {
     public static List<Article> generateRecommendations(User user) {
-
-        DatabaseHandler db = new DatabaseHandler();
+        DatabaseHandler dbh = new DatabaseHandler();
         // Step 1: Update user preferences
         updatePreferences(user);
 
         // Step 2: Sort preferences by interest level in descending order
-        List<Preference> sortedPreferences = db.getUserPreferences(user.getUserID()).stream()
+        List<Preference> sortedPreferences = dbh.getUserPreferences(user).stream()
                 .sorted((p1, p2) -> Integer.compare(p2.getInterestLevel(), p1.getInterestLevel()))
                 .toList();
 
@@ -26,7 +25,7 @@ public class RecommendationEngine {
         int[] articlesPerCategory = {3, 2, 1}; // Number of articles to pick per category
         for (int i = 0; i < topCategories.size(); i++) {
             Category category = topCategories.get(i);
-            List<Article> categoryArticles = db.fetchFilteredArticles(category);
+            List<Article> categoryArticles = dbh.fetchFilteredArticles(category);
 
             // Randomly select the required number of articles from this category
             Collections.shuffle(categoryArticles); // Shuffle the list
@@ -41,11 +40,11 @@ public class RecommendationEngine {
     }
 
     public static void updatePreferences(User user) {
-        DatabaseHandler db = new DatabaseHandler();
+        DatabaseHandler dbh = new DatabaseHandler();
         LocalDate today = LocalDate.now();
 
         // Step 1: Fetch user's registration date
-        LocalDate registrationDate = LocalDate.parse(db.getUserDetails(user.getUsername()).get(5));
+        LocalDate registrationDate = LocalDate.parse(dbh.getUserDetails(user.getUsername()).get(5));
 
         // Step 2: Calculate time difference
         long daysSinceRegistration = ChronoUnit.DAYS.between(registrationDate, today);
@@ -54,10 +53,10 @@ public class RecommendationEngine {
         List<Interaction> interactions = new ArrayList<>();
         if (daysSinceRegistration > 7) {
             LocalDate oneWeekAgo = today.minusDays(7);
-            interactions = db.getUserInteractions(user, oneWeekAgo);
+            interactions = dbh.getUserInteractions(user, oneWeekAgo);
         }
 
-        List<Preference> preferences = db.getUserPreferences(user.getUserID());
+        List<Preference> preferences = dbh.getUserPreferences(user);
 
         // Step 4: Update preferences based on interactions
         Map<String, Integer> categoryUpdates = new HashMap<>();
@@ -114,7 +113,7 @@ public class RecommendationEngine {
 
         // Step 8: Update preferences in DB
         for (Preference preference : preferences) {
-            db.updatePreference(user.getUserID(), preference); // Calls the updatePreference method for each preference
+            dbh.updatePreference(preference); // Calls the updatePreference method for each preference
         }
     }
 

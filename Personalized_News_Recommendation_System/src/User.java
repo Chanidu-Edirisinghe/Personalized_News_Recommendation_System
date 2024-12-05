@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class User extends SystemUser{
@@ -18,10 +19,10 @@ public class User extends SystemUser{
         }
     }
 
-    public void updatePreferences(int prefNumber, int interest_level){
+    public void updatePreference(int prefNumber, int interest_level){
         Preference pref = preferences.get(prefNumber);
         pref.setInterestLevel(interest_level);
-        dbh.updatePreference(this.getUserID(), pref);
+        dbh.updatePreference(pref);
     }
 
     public void recordInteraction(User user, Article article, String interaction_type){

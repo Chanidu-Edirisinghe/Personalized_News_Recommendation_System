@@ -4,14 +4,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public class Driver {
+public class Application {
     private static final DatabaseHandler dbHandler = new DatabaseHandler();
     private static final Scanner scanner = new Scanner(System.in);
     private static final ExecutorService executorService = Executors.newFixedThreadPool(10); // Allow up to 10 concurrent users
     public static void main(String[] args) {
         while (true) {
             boolean condition = handleMainMenu(); // Display the main menu
-            if(condition){
+            if (condition) {
                 break;
             }
         }
@@ -55,10 +55,10 @@ public class Driver {
             switch (choice) {
                 case "1":
                     user.recordInteraction(user, article, "Like");
-                    break;
+                    return;
                 case "2":
                     user.recordInteraction(user, article, "Skip");
-                    break;
+                    return;
                 case "3":
                     System.out.println("Exiting...");
                     return;
@@ -224,7 +224,7 @@ public class Driver {
             }
         }
     }
-    private static boolean handleMainMenu() {
+    private synchronized static boolean handleMainMenu() {
         System.out.println("Welcome! Please choose an option:");
         System.out.println("1. Login");
         System.out.println("2. Register");
@@ -234,20 +234,20 @@ public class Driver {
         switch (choice) {
             case "1":
                 // Submit the login task to the executor for concurrent execution
-                executorService.submit(() -> {
-                    List<String> userDetails = handleLogin(); // Call the login flow
-                    // go to main flow only if the user is registered in the system.
-                    if (userDetails != null) {
-                        // check if a user logged in
-                        if (userDetails.getLast().equals("USER")) {
-                            User user = createUser(userDetails);
-                            handleUserMenu(user);
-                        } else { // admin
-                            Admin admin = createAdmin(userDetails);
-                            handleAdminMenu(admin);
-                        }
+
+                List<String> userDetails = handleLogin(); // Call the login flow
+                // go to main flow only if the user is registered in the system.
+                if (userDetails != null) {
+                    // check if a user logged in
+                    if (userDetails.getLast().equals("USER")) {
+                        User user = createUser(userDetails);
+                        handleUserMenu(user);
+                    } else { // admin
+                        Admin admin = createAdmin(userDetails);
+                        handleAdminMenu(admin);
                     }
-                });
+                }
+
                 break;
 
             case "2":
@@ -282,7 +282,14 @@ public class Driver {
         System.out.print("Enter content: ");
         String content = scanner.nextLine();
         System.out.println("Please wait a moment for the article to get categorized.");
-        String category = Objects.requireNonNull(ArticleCategorizer.categorizeArticles(title + " " + content)).toUpperCase();
+        String category;
+        try{
+            category = Objects.requireNonNull(ArticleCategorizer.categorizeArticle(title + " " + content)).toUpperCase();
+        }
+        catch (Exception e){
+            System.out.println("Invalid details entered. Article not added.");
+            return;
+        }
         Article article = admin.addArticle(title, content, Category.valueOf(category));
         if(article != null){
             System.out.println("Article added.");
@@ -382,6 +389,9 @@ public class Driver {
             else if(notAlphabeticName(firstName)) {
                 System.out.print("Enter valid first name: ");
             }
+            else{
+                break;
+            }
         }
 
         System.out.println("Enter new last name (leave blank to keep current).");
@@ -395,6 +405,9 @@ public class Driver {
             else if(notAlphabeticName(lastName)) {
                 System.out.print("Enter valid last name: ");
             }
+            else{
+                break;
+            }
         }
 
         // Update user details
@@ -405,7 +418,7 @@ public class Driver {
 
         System.out.println("\nProfile updated successfully!\n");
     }
-    private static Article handleDisplayArticles(User user, List<Article> articles) {
+    private static Article handleDisplayArticles(SystemUser user, List<Article> articles) {
         user.viewArticles(articles);
 
         int article_id;
@@ -435,7 +448,7 @@ public class Driver {
             matchedArticle.displayArticle();
             return matchedArticle;
         } else {
-            System.out.println("No article found with the given ID.");
+            System.out.println("Display error occurred.");
             return  null;
         }
     }
@@ -446,23 +459,11 @@ public class Driver {
     }
     private static void handleEditArticle(Admin admin) {
         List<Article> articles = dbHandler.fetchArticles();
-        admin.viewArticles(articles);
-        int article_id = validateID("article ID");
-        Article selectedArticle = null;
-        for (Article article : articles) {
-            if (article.getArticleID() == article_id) {
-                selectedArticle = article;
-                break;
-            }
-        }
+        Article selectedArticle = handleDisplayArticles(admin, articles);
 
         if (selectedArticle == null) {
-            System.out.println("Invalid article ID.");
             return;
         }
-
-        // Display the article details
-        selectedArticle.displayArticle();
 
         // Prompt for new title and content, showing current values as defaults
         System.out.print("Enter new title: ");
@@ -522,20 +523,18 @@ public class Driver {
         }
 
         // Convert selected category numbers to preferences
-        if(!preferenceAdded) {
-            for (int i = 0; i < categories.length - 1; i++) {
-                user.addPreference(new Preference(categories[i], 0), true); // Initialize all categories with a default interest level of 0
+        for (int i = 0; i < categories.length - 1; i++) {
+            if(!preferenceAdded){
+                user.addPreference(new Preference(categories[i], 0, user), true); // Initialize all categories with a default interest level of 0
             }
-        }
-        else{
-            for (int i = 0; i < categories.length - 1; i++) {
-                user.addPreference(new Preference(categories[i], 0), false); // Initialize all categories with a default interest level of 0
-                user.updatePreferences(i, 0);
+            else{
+                user.addPreference(new Preference(categories[i], 0, user), false); // Initialize all categories with a default interest level of 0
+                user.updatePreference(i, 0);
             }
         }
 
         for (int categoryNumber : selectedCategories) {
-            user.updatePreferences(categoryNumber - 1, 50); // Update selected categories with interest level
+            user.updatePreference(categoryNumber - 1, 50); // Update selected categories with interest level
         }
     }
     private static User handleRegister() {
@@ -563,17 +562,7 @@ public class Driver {
         if (userId > 0) {
             // Retrieve user details
             List<String> userDetails = dbHandler.getUserDetails(username);
-
-            // Create and return User object
-            User user = new User(
-                    Integer.parseInt(userDetails.get(0)),
-                    userDetails.get(1),
-                    userDetails.get(2),
-                    userDetails.get(3),
-                    userDetails.get(4),
-                    LocalDate.parse(userDetails.get(5))
-            );
-
+            User user = createUser(userDetails);
             handlePreferenceUpdate(user, false);
             System.out.println("\nPreferences updated successfully!");
             System.out.println("Registration successful! Welcome, " + user.getFirstName() + "!");

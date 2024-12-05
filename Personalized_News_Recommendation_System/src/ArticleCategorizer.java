@@ -97,7 +97,7 @@ public class ArticleCategorizer {
     };
 
 
-    public static String categorizeArticles(String article) {
+    public static String categorizeArticle(String article) {
         try {
             // Path to Python script
             String pythonScript = "C:\\Users\\User\\Documents\\IIT\\AIDS Degree Details\\Y2S1\\CM2601 - Object Orientated Development\\Coursework\\CW\\Personalized_News_Recommendation_System\\python_scripts\\keyword_extractor.py";
@@ -108,7 +108,6 @@ public class ArticleCategorizer {
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                System.out.println("Python script encountered an error.");
                 return null;
             }
 
@@ -147,7 +146,7 @@ public class ArticleCategorizer {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error in categorizing article.");
         }
         return null;
     }
@@ -170,7 +169,7 @@ public class ArticleCategorizer {
         List<Article> articles = dbh.fetchArticles();
         int count = 0;
         for(Article article: articles){
-            String predCategory = categorizeArticles(article.getTitle()+" "+article.getContent());
+            String predCategory = categorizeArticle(article.getTitle()+" "+article.getContent());
             assert predCategory != null;
             if(article.getCategory().toString().equals(predCategory.toUpperCase())){
                 count++;
@@ -179,4 +178,45 @@ public class ArticleCategorizer {
         double accuracy = (double) (count * 100) /articles.size();
         System.out.println("Accuracy: "+accuracy);
     }
+
+    public static String[] getCulture_keywords() {
+        return culture_keywords;
+    }
+
+    public static String[] getEducation_keywords() {
+        return education_keywords;
+    }
+
+    public static String[] getEntertainment_keywords() {
+        return entertainment_keywords;
+    }
+
+    public static String[] getHealth_keywords() {
+        return health_keywords;
+    }
+
+    public static String[] getHistory_keywords() {
+        return history_keywords;
+    }
+
+    public static String[] getPolitics_keywords() {
+        return politics_keywords;
+    }
+
+    public static String[] getScience_keywords() {
+        return science_keywords;
+    }
+
+    public static String[] getSport_keywords() {
+        return sport_keywords;
+    }
+
+    public static String[] getTechnology_keywords() {
+        return technology_keywords;
+    }
+
+    public static String[] getWeather_keywords() {
+        return weather_keywords;
+    }
+
 }

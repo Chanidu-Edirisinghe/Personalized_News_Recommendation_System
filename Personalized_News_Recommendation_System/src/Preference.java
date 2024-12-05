@@ -1,8 +1,10 @@
 public class Preference {
     private Category category;
     private int interestLevel;//(0 to 100)
+    private User user;
 
-    public Preference(Category category, int interestLevel){
+    public Preference(Category category, int interestLevel, User user){
+        this.user = user;
         this.category = category;
         this.interestLevel = interestLevel;
     }
@@ -21,5 +23,13 @@ public class Preference {
 
     public void setInterestLevel(int interestLevel) {
         this.interestLevel = interestLevel;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

@@ -1,8 +1,9 @@
 public class Preference {
     private Category category;
-    private int interestLevel;//(0 to 100)
+    private int interestLevel;
     private User user;
 
+    // constructor
     public Preference(Category category, int interestLevel, User user){
         this.user = user;
         this.category = category;

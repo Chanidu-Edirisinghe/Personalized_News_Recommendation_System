@@ -7,6 +7,7 @@ public class Admin extends SystemUser{
 
     private final DatabaseHandler dbh = new DatabaseHandler();
 
+    // Constructor
     public Admin(int user_id, String username, String password, String firstName, String lastName, LocalDate regDate){
         super(user_id, username, password, firstName, lastName, regDate, Role.ADMIN);
     }
@@ -74,7 +75,5 @@ public class Admin extends SystemUser{
         ));
 
     }
-
-
 
 }

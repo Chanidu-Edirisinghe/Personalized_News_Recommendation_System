@@ -1,3 +1,3 @@
-public enum Role {
+public enum Role { // different user roles
     USER, ADMIN
 }

@@ -8,6 +8,7 @@ public class User extends SystemUser{
     private List<Interaction> interactions = new ArrayList<>();
     private final DatabaseHandler dbh = new DatabaseHandler();
 
+    // constructor
     public User(int user_id, String username, String password, String firstname, String lastname, LocalDate regDate) {
         super(user_id, username, password, firstname, lastname, regDate, Role.USER);
     }
@@ -30,10 +31,12 @@ public class User extends SystemUser{
         interactions.add(interaction);
     }
 
+    // get recommendations using recommendation engine
     public List<Article> getRecommendations(){
         return RecommendationEngine.generateRecommendations(this);
     }
 
+    // update user details
     public void updateDetails(String username, String password, String firstName, String lastName){
         this.setUsername(username);
         this.setPassword(password);

@@ -13,6 +13,7 @@ public class SystemUser {
     private final LocalDate registrationDate;
     private final Role role;
 
+    // constructor
     public SystemUser(int userID, String username, String password, String firstname,
                       String lastname, LocalDate registrationDate, Role role){
         this.userID = userID;
@@ -44,6 +45,7 @@ public class SystemUser {
         ));
     }
 
+    // helper method for printing users
     public static <T> void printTable(List<T> data, List<String> headers, Function<T, List<String>> rowMapper) {
         if (data == null || data.isEmpty()) {
             System.out.println("No data available to display.");
@@ -77,7 +79,7 @@ public class SystemUser {
         printSeparator(columnWidths);   // Final separator
     }
 
-
+    // helper method for table of users
     private static void printSeparator(int[] columnWidths) {
         for (int width : columnWidths) {
             System.out.print("+");
@@ -86,6 +88,7 @@ public class SystemUser {
         System.out.println("+");
     }
 
+    // helper method for table of users
     private static void printRow(List<String> row, int[] columnWidths) {
         for (int i = 0; i < row.size(); i++) {
             System.out.printf("| %-"+ columnWidths[i] +"s ", row.get(i));

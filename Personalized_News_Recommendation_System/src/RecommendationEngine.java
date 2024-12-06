@@ -51,6 +51,7 @@ public class RecommendationEngine {
 
         // Step 3: Fetch interactions and preferences
         List<Interaction> interactions = new ArrayList<>();
+        // Interactions used only if the daysSinceRegistration > 7
         if (daysSinceRegistration > 7) {
             LocalDate oneWeekAgo = today.minusDays(7);
             interactions = dbh.getUserInteractions(user, oneWeekAgo);
@@ -66,10 +67,10 @@ public class RecommendationEngine {
 
             switch (interaction.getInteractionType()) {
                 case "Like":
-                    categoryUpdates.put(category, categoryUpdates.get(category) + 10);
+                    categoryUpdates.put(category, categoryUpdates.get(category) + 5);
                     break;
                 case "Read":
-                    categoryUpdates.put(category, categoryUpdates.get(category) + 5);
+                    categoryUpdates.put(category, categoryUpdates.get(category) + 1);
                     break;
                 case "Skip":
                     categoryUpdates.put(category, categoryUpdates.get(category) - 5);
@@ -81,57 +82,22 @@ public class RecommendationEngine {
         for (Preference preference : preferences) {
             if (categoryUpdates.containsKey(String.valueOf(preference.getCategory()))) {
                 int updatedLevel = preference.getInterestLevel() + categoryUpdates.get(String.valueOf(preference.getCategory()));
-                preference.setInterestLevel(updatedLevel); // Clamp within 0 to 100
+                preference.setInterestLevel(updatedLevel);
             }
         }
 
-        // Step 5.1: Find min and max interest levels
-        int minLevel = preferences.stream()
-                .mapToInt(Preference::getInterestLevel)
-                .min()
-                .orElse(0);
-
-        int maxLevel = preferences.stream()
-                .mapToInt(Preference::getInterestLevel)
-                .max()
-                .orElse(100);
-
-        // Step 5.2: Normalize interest levels to fit between 0 and 100
-        if (minLevel != maxLevel) {
-            for (Preference preference : preferences) {
-                int normalizedLevel = (int) Math.round(
-                        ((double) (preference.getInterestLevel() - minLevel) * 100) / (maxLevel - minLevel)
-                );
-                preference.setInterestLevel(normalizedLevel);
-            }
-        } else {
-            // If all levels are the same, set all to 50
-            for (Preference preference : preferences) {
-                preference.setInterestLevel(50);
-            }
+        // decay used to slow down the speed at which the upper bound is reached
+        double decayRate = 0.1; // 10% decay
+        for (Preference preference : preferences) {
+            int decayedLevel = (int) (preference.getInterestLevel() * (1 - decayRate));
+            preference.setInterestLevel(decayedLevel);
         }
 
-        // Step 8: Update preferences in DB
+        // Step 6: Update preferences in DB
         for (Preference preference : preferences) {
             dbh.updatePreference(preference); // Calls the updatePreference method for each preference
         }
     }
 
-    //    public void updatePreferences(User user){
-//        // check user registration date and today date,
-//        // if the difference is less than 1 week use preferences tied to the user
-//        // if the difference is greater than 1 week , get the interactions of the user for the past week(from today)
-//        // then make an algorithm that will update the preferences of the user based on the user's interactions with
-//        // articles. The user can read, like or skip each article and all these interactions are stored in the db.
-//        // After getting user interactions for past week, each interaction is tied to an article so can get category
-//        // of each article, based on user interaction, example, if user likes an article that belongs to Technology
-//        // category, update the interest level(limits of interest level is 0 - 100) in preference object by adding a
-//        // suitable amount per like in the past week, per read in last week and subtracting per skip. Also make sure
-//        // interest level stays between 0 and 100 and if some category approaches 100, reduce the interest level of
-//        // all categories by the same amount to maintain relative importance and also to adhere to constraints.
-//        // To have access to interactions of user and preferences of user, fetch them from the db using user_id
-//        // and store them in the user's private List<Preference> preferences = new ArrayList<>();
-//        // and  private List<Interaction> interactions = new ArrayList<>();
-//    }
 
 }

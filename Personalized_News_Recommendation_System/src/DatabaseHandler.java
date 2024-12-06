@@ -9,11 +9,12 @@ public class DatabaseHandler {
     public DatabaseHandler(){
     }
 
+    // use driver manager to get a connection to db
     private static Connection getConnection() throws SQLException{
         return DriverManager.getConnection(url);
     }
 
-    // Asynchronous
+    // login method
     public boolean login(String username, String password){
         String sql = "SELECT * FROM Users WHERE username = ? AND password = ?";
         try (Connection conn = getConnection();
@@ -30,6 +31,7 @@ public class DatabaseHandler {
         return false; // Return false if no match is found or an error occurs
     }
 
+    // register new user to db
     public int register(String username, String password, String firstname, String lastname) {
         String sql = "INSERT INTO Users (username, password, firstname, lastname, role) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
@@ -56,6 +58,7 @@ public class DatabaseHandler {
         return -1; // Indicate failure
     }
 
+    // save user preferences to db
     public void savePreference(int userID, Preference preference){
         String sql = "INSERT INTO Preferences (user_id, category, interest_level) VALUES (?, ?, ?)";
         try (Connection conn = getConnection();
@@ -70,6 +73,7 @@ public class DatabaseHandler {
         }
     }
 
+    // save user interactions - like, skip, read
     public Interaction saveInteraction(User user, Article article, String interaction_type) {
         String sql = "INSERT INTO Interactions (user_id, article_id, interaction_type) VALUES (?, ?, ?)";
         Interaction interaction = null;
@@ -121,6 +125,7 @@ public class DatabaseHandler {
         return interaction;
     }
 
+    // save new article to db - admin
     public Article saveNewArticle(String title, String content, Category category) {
         String sql = "INSERT INTO Articles (title, content, category) VALUES (?, ?, ?)";
         try (Connection conn = getConnection();
@@ -149,6 +154,7 @@ public class DatabaseHandler {
         return null; // Return null in case of failure
     }
 
+    // save changes after article is edited to the db
     public void saveUpdatedArticle(Article article) {
         String sql = "UPDATE Articles SET title = ?, content = ? WHERE article_id = ?";
         try (Connection conn = getConnection();
@@ -165,7 +171,7 @@ public class DatabaseHandler {
         }
     }
 
-
+    // delete articles - admin
     public void removeDeletedArticle(int article_id) {
         String sql = "DELETE FROM Articles WHERE article_id = ?";
         try (Connection conn = getConnection();
@@ -192,7 +198,7 @@ public class DatabaseHandler {
         }
     }
 
-
+    // check if the given username is already in use
     public boolean checkUsernameAvailability(String username) {
         String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND role = 'USER'";
         try (Connection conn = getConnection();
@@ -211,6 +217,7 @@ public class DatabaseHandler {
         return false;
     }
 
+    // delete users from db - admin
     public void removeUser(int user_id) {
         // SQL query to delete the user based on their unique identifier (e.g., user_id or username)
         String deleteSQL = "DELETE FROM Users WHERE user_id = ?";
@@ -240,6 +247,7 @@ public class DatabaseHandler {
         }
     }
 
+    // get details of a user given the id
     public List<String> getUserDetails(String username) {
         List<String> userDetailsList = new ArrayList<>();
         String sql = "SELECT user_id, username, password, firstname, lastname, registration_date, role FROM Users WHERE username LIKE ?";
@@ -265,6 +273,7 @@ public class DatabaseHandler {
         return userDetailsList; // Return the list of user details
     }
 
+    // fetch all articles from the db
     public List<Article> fetchArticles() {
         List<Article> articleList = new ArrayList<>();
         String sql = "SELECT article_id, title, content, category FROM Articles";
@@ -289,6 +298,7 @@ public class DatabaseHandler {
         return articleList;
     }
 
+    // update user details - user
     public void updateUserDetails(User user){
         String sql = "UPDATE Users SET username = ?, password = ?, firstname = ?, lastname = ? " +
                 "WHERE user_id = ?";
@@ -306,13 +316,14 @@ public class DatabaseHandler {
         }
     }
 
+    // get articles by category
     public List<Article> fetchFilteredArticles(Category category) {
         List<Article> articleList = new ArrayList<>();
         String sql = "SELECT article_id, title, content FROM Articles WHERE category = ?";
         try (Connection conn = getConnection();
              PreparedStatement pst = conn.prepareStatement(sql)) {
 
-            pst.setString(1, category.toString().toLowerCase()); // Set the category parameter
+            pst.setString(1, category.toString()); // Set the category parameter
             ResultSet rs = pst.executeQuery();
 
             while (rs.next()) {
@@ -330,7 +341,7 @@ public class DatabaseHandler {
         return articleList; // Return the list of Article objects
     }
 
-
+    // update user preferences in db
     public void updatePreference(Preference preference){
         String sql = "UPDATE Preferences SET interest_level = ? WHERE user_id = ? AND category = ?";
         try (Connection conn = getConnection();
@@ -345,6 +356,7 @@ public class DatabaseHandler {
         }
     }
 
+    // fetch all users
     public List<SystemUser> fetchRegisteredUsers() {
         List<SystemUser> users = new ArrayList<>();
         String sql = "SELECT user_id, username, password, firstname, lastname, registration_date, role FROM Users";
@@ -373,6 +385,7 @@ public class DatabaseHandler {
         return users;
     }
 
+    // reset password of a user - admin
     public boolean resetPassword(int user_id, String pw){
         String sql = "UPDATE Users SET password = ? WHERE user_id = ?";
         try(Connection conn = getConnection();
@@ -393,6 +406,7 @@ public class DatabaseHandler {
         return false;
     }
 
+    // get all interactions of a user from db for past week for recommendations
     public List<Interaction> getUserInteractions(User user, LocalDate fromDate) {
         String query = "SELECT * FROM Interactions WHERE user_id = ? AND interaction_date >= ?";
         List<Interaction> interactions = new ArrayList<>();
@@ -403,21 +417,27 @@ public class DatabaseHandler {
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     Article article = getArticleById(rs.getInt("article_id")); // Fetch related article
+                    String interactionDateString = rs.getString("interaction_date");
+
+                    LocalDate interactionDate = interactionDateString != null ? LocalDate.parse(interactionDateString) : null;
+
                     interactions.add(new Interaction(
                             rs.getInt("interaction_id"),
                             user, // Use the provided User object
                             article,
                             rs.getString("interaction_type"),
-                            rs.getDate("interaction_date").toLocalDate() // Correctly parse the LocalDate
+                            interactionDate
                     ));
                 }
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             System.out.println("Issue while connecting to the database.");
         }
         return interactions;
     }
 
+    // gets article given the ID
     public Article getArticleById(int article_id) {
         String query = "SELECT * FROM Articles WHERE article_id = ?";
         try (Connection conn = getConnection();
@@ -439,6 +459,7 @@ public class DatabaseHandler {
         return null;
     }
 
+    // gets the preferences of the user for all categories
     public List<Preference> getUserPreferences(User user) {
         String query = "SELECT * FROM Preferences WHERE user_id = ?";
         List<Preference> preferences = new ArrayList<>();

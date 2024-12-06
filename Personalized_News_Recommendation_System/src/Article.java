@@ -6,8 +6,11 @@ public class Article {
     private String content;
     private Category category;
     private List<Interaction> interactions = new ArrayList<>();
+    // for composition - not explicitly used in this application, added just to represent the relationship
+    // the program is not concerned about the interactions per article.
 
 
+    // constructor
     public Article(int articleID, String title, String content, Category category){
         this.articleID = articleID;
         this.title = title;

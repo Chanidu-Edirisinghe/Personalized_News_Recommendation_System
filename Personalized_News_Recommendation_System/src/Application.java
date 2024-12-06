@@ -18,7 +18,6 @@ public class Application {
         executorService.shutdown();
     }
 
-    // Fixed methods
 
     private static boolean notAlphabeticName(String name) {
         // Check if the name matches only alphabetic letters
@@ -28,21 +27,23 @@ public class Application {
         int id;
         while (true) {
             System.out.print("Enter " + idName + ": ");
-            String input = scanner.nextLine().trim();
+            String input = scanner.nextLine().trim(); // Read and trim user input
 
             try {
-                id = Integer.parseInt(input); // Try parsing the input to an integer
+                id = Integer.parseInt(input); // Convert input to an integer
                 if (id > 0) {
-                    break; // Valid ID (numeric and greater than zero)
+                    break; // Exit loop if ID is positive
                 } else {
                     System.out.println(idName + " must be greater than zero. Please try again.");
                 }
             } catch (NumberFormatException e) {
+                // Handle invalid input that cannot be parsed as an integer
                 System.out.println(idName + " must be a valid number. Please try again.");
             }
         }
-        return id;
+        return id; // Return the validated ID
     }
+
     private static void handleUserInteraction(User user, Article article) {
         // 'Read', 'Like', 'Skip'
         user.recordInteraction(user, article, "Read");
@@ -51,13 +52,16 @@ public class Application {
             System.out.println("2. Do you want to skip this article.");
             System.out.println("3. Exit article.");
             System.out.print("Enter your choice (1, 2, 3): ");
-            String choice = scanner.nextLine().trim(); // validation
+            String choice = scanner.nextLine().trim();
+            // validation
             switch (choice) {
                 case "1":
                     user.recordInteraction(user, article, "Like");
+                    System.out.println("Article liked.");
                     return;
                 case "2":
                     user.recordInteraction(user, article, "Skip");
+                    System.out.println("Article skipped.");
                     return;
                 case "3":
                     System.out.println("Exiting...");
@@ -122,44 +126,51 @@ public class Application {
         String username;
         while (true) {
             System.out.print("Enter username: ");
-            username = scanner.nextLine().trim();
+            username = scanner.nextLine().trim(); // Read and trim user input
 
-            if(update && username.isEmpty()){
+            // Allow empty input if updating and return null in such cases
+            if (update && username.isEmpty()) {
                 return null;
             }
 
+            // Check if the username is at least 6 characters long
             if (username.length() < 6) {
                 System.out.println("Username must be at least 6 characters long. Please try again.");
                 continue;
             }
 
+            // Ensure the username contains only alphanumeric characters
             if (!username.matches("[a-zA-Z0-9]+")) {
                 System.out.println("Username must only contain alphanumeric characters. Please try again.");
                 continue;
             }
 
-            break; // If all checks pass, exit the loop
+            break; // Exit the loop if all validations pass
         }
-        return username;
+        return username; // Return the validated username
     }
-    private static String validatePassword(boolean update){
+
+    private static String validatePassword(boolean update) {
         String password;
         while (true) {
             System.out.print("Enter password: ");
-            password = scanner.nextLine().trim();
+            password = scanner.nextLine().trim(); // Read and trim user input
 
-            if(update && password.isEmpty()){
+            // Allow empty input if updating and return null in such cases
+            if (update && password.isEmpty()) {
                 return null;
             }
 
+            // Check if the password is at least 6 characters long
             if (password.length() < 6) {
                 System.out.println("Password must be at least 6 characters long. Please try again.");
             } else {
-                break;
+                break; // Exit the loop if the password is valid
             }
         }
-        return password;
+        return password; // Return the validated password
     }
+
     private static String validateName(String fieldName) {
         String name;
         while (true) {
@@ -200,6 +211,7 @@ public class Application {
         }
     }
     private static void handleManageUsers(Admin admin){
+        System.out.println("Manage users selected.");
         while (true) {
             System.out.println("Please choose an option:");
             System.out.println("1. Reset user password.");
@@ -209,14 +221,17 @@ public class Application {
             String choice = scanner.nextLine();
             switch (choice) {
                 case "1":
+                    // reset password
                     admin.displayRegisteredUsers();
                     handlePwReset(admin);
                     break;
                 case "2":
+                    // delete users
                     admin.displayRegisteredUsers();
                     handleUserDeactivation(admin);
                     break;
                 case "3":
+                    // exit
                     System.out.println("Exiting menu...");
                     return;
                 default:
@@ -233,8 +248,6 @@ public class Application {
         String choice = scanner.nextLine().trim();
         switch (choice) {
             case "1":
-                // Submit the login task to the executor for concurrent execution
-
                 List<String> userDetails = handleLogin(); // Call the login flow
                 // go to main flow only if the user is registered in the system.
                 if (userDetails != null) {
@@ -284,18 +297,21 @@ public class Application {
         System.out.println("Please wait a moment for the article to get categorized.");
         String category;
         try{
+            // use article categorizer to categorize article
             category = Objects.requireNonNull(ArticleCategorizer.categorizeArticle(title + " " + content)).toUpperCase();
         }
         catch (Exception e){
             System.out.println("Invalid details entered. Article not added.");
             return;
         }
+        //add the article to db
         Article article = admin.addArticle(title, content, Category.valueOf(category));
         if(article != null){
             System.out.println("Article added.");
         }
     }
     private static void handleManageArticles(Admin admin){
+        System.out.println("Manage articles selected.");
         while(true) {
             System.out.println("Please choose an option:");
             System.out.println("1. Add article.");
@@ -342,6 +358,7 @@ public class Application {
                     handleManageArticles(admin);
                     break;
                 case "3":
+                    // exit
                     System.out.println("Exiting menu...");
                     return;
                 default:
@@ -356,12 +373,14 @@ public class Application {
         // Collect new details from the user
         System.out.println("Enter new username (leave blank to keep current).");
         String username;
+        // username validation
         while (true) {
             username = validateUsername(true);
             if(username == null){
                 username = currentUser.getUsername();
                 break;
             }
+            // check if in db already
             if (!dbHandler.checkUsernameAvailability(username) && !Objects.equals(currentUser.getUsername(), username)) {
                 System.out.println("Username is already taken. Please choose another.");
                 continue;
@@ -369,7 +388,7 @@ public class Application {
             break;
         }
 
-
+        // password validation
         System.out.println("Enter new password (leave blank to keep current): ");
         String password;
         password = validatePassword(true);
@@ -377,7 +396,7 @@ public class Application {
             password = currentUser.getPassword(); // Keep the current password
         }
 
-
+        // firstname validation
         System.out.println("Enter new first name (leave blank to keep current).");
         String firstName;
         while(true) {
@@ -394,6 +413,7 @@ public class Application {
             }
         }
 
+        // lastname validation
         System.out.println("Enter new last name (leave blank to keep current).");
         String lastName;
         while(true) {
@@ -423,7 +443,7 @@ public class Application {
 
         int article_id;
         Set<Integer> articleIds = articles.stream()
-                .map(Article::getArticleID) // Assuming Article has a getId() method
+                .map(Article::getArticleID)
                 .collect(Collectors.toSet()); // Collect all article IDs into a set for quick lookup
 
         while (true) {
@@ -473,6 +493,7 @@ public class Application {
         String newContent = scanner.nextLine();
 
         // Update title and content only if input is provided
+
         if (!newTitle.trim().isEmpty()) {
             selectedArticle.setTitle(newTitle);
         }
@@ -480,8 +501,9 @@ public class Application {
         if (!newContent.trim().isEmpty()) {
             selectedArticle.setContent(newContent);
         }
+
         admin.editArticle(selectedArticle);
-        System.out.println("Article updated successfully!");
+        System.out.println("Article updated if details not empty.");
     }
     private static void handlePreferenceUpdate(User user, boolean preferenceAdded){
         System.out.println("Choose categories you are interested in.");
@@ -506,6 +528,7 @@ public class Application {
                 break;
             }
 
+            // validation of category number
             try {
                 int categoryNumber = Integer.parseInt(input);
 
@@ -514,6 +537,7 @@ public class Application {
                 } else if (selectedCategories.contains(categoryNumber)) {
                     System.out.println("You have already selected this category. Choose a different one.");
                 } else {
+                    // add to selected list
                     selectedCategories.add(categoryNumber);
                     System.out.println(categories[categoryNumber - 1] + " added to your preferences.");
                 }
@@ -534,7 +558,7 @@ public class Application {
         }
 
         for (int categoryNumber : selectedCategories) {
-            user.updatePreference(categoryNumber - 1, 50); // Update selected categories with interest level
+            user.updatePreference(categoryNumber - 1, 5); // Update selected categories with interest level
         }
     }
     private static User handleRegister() {

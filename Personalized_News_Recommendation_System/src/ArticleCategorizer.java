@@ -163,11 +163,13 @@ public class ArticleCategorizer {
     }
 
 
-    // check accuracy
+    // Method used to check the accuracy of the article categorizer
     public static void main(String[] args) {
         DatabaseHandler dbh = new DatabaseHandler();
+        // fetch articles from db
         List<Article> articles = dbh.fetchArticles();
         int count = 0;
+        // check each article's actual category with categorized category and get match accuracy
         for(Article article: articles){
             String predCategory = categorizeArticle(article.getTitle()+" "+article.getContent());
             assert predCategory != null;
@@ -175,6 +177,7 @@ public class ArticleCategorizer {
                 count++;
             }
         }
+        // accuracy calculation
         double accuracy = (double) (count * 100) /articles.size();
         System.out.println("Accuracy: "+accuracy);
     }
